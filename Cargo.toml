@@ -1,0 +1,28 @@
+[package]
+authors = ["Ben Ruijl <benruyl@gmail.com>"]
+categories = ["science"]
+description = "A blazing fast computer algebra system with community enhancements"
+edition = "2021"
+keywords = ["algebra", "symbolic", "manipulation", "mathematics", "physics"]
+license = "MIT"
+name = "symbolica"
+readme = "Readme.md"
+repository = "https://github.com/benruijl/symbolica-community"
+rust-version = "1.73"
+version = "0.1.0"
+
+[profile.release]
+codegen-units = 1
+lto = true
+
+[profile.dev-optim]
+inherits = "dev"
+opt-level = 3
+
+[lib]
+name = "symbolica_community"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+symbolica = {git="https://github.com/benruijl/symbolica.git", features=["python_no_module"] }
+pyo3 = {version="0.20.0", features=["abi3-py37"]}

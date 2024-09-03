@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+authors = [
+  {email = "benruyl@gmail.com"},
+  {name = "Ben Ruijl"},
+]
+name = "symbolica-community"
+summary = "Community-enhanced version of Symbolica: a blazing fast computer algebra system"
+description = "Community-enhanced version of Symbolica: a blazing fast computer algebra system"
+keywords = ["math", "algebra", "polynomial", "expression", "manipulation"]
+version = "0.1.0"
+readme = "Readme.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+[project.optional-dependencies]
+tests = [
+    "pytest",
+]
+[tool.maturin]
+python-source = "python"
+features = ["pyo3/extension-module"]
