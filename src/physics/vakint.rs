@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::env;
 
 use pyo3::types::PyType;
-use pyo3::{exceptions, pyclass, pymethods, FromPyObject, PyErr, Python};
+use pyo3::{exceptions, pyclass, pymethods, FromPyObject, PyErr, PyRef, Python};
 use pyo3::{PyObject, PyResult};
 use symbolica::api::python::PythonExpression;
 use symbolica::atom::Atom;
@@ -70,40 +70,16 @@ impl NumericalEvaluationResultWrapper {
         Ok(NumericalEvaluationResultWrapper { value: r })
     }
 
-    // pub fn compare_to(
-    //     &self,
-    //     other: PyObject,
-    //     relative_threshold: f64,
-    //     error: Option<PyObject>,
-    //     max_pull: Option<f64>,
-    // ) -> PyResult<(bool, String)> {
-    //     let o = Python::with_gil(|py| other.extract::<NumericalEvaluationResultWrapper>(py))?;
-    //     let e = if let Some(e_wrapper) = error {
-    //         Some(
-    //             Python::with_gil(|py| e_wrapper.extract::<NumericalEvaluationResultWrapper>(py))?
-    //                 .value,
-    //         )
-    //     } else {
-    //         None
-    //     };
-    //     Ok(self.value.does_approx_match(
-    //         &o.value,
-    //         e.as_ref(),
-    //         relative_threshold,
-    //         max_pull.unwrap_or(3.0),
-    //     ))
-    // }
-
     pub fn compare_to(
         &self,
-        other: NumericalEvaluationResultWrapper,
+        other: PyRef<NumericalEvaluationResultWrapper>,
         relative_threshold: f64,
-        error: Option<NumericalEvaluationResultWrapper>,
+        error: Option<PyRef<NumericalEvaluationResultWrapper>>,
         max_pull: Option<f64>,
     ) -> PyResult<(bool, String)> {
         Ok(self.value.does_approx_match(
             &other.value,
-            error.map(|e| e.value).as_ref(),
+            error.map(|e| e.value.clone()).as_ref(),
             relative_threshold,
             max_pull.unwrap_or(3.0),
         ))
@@ -246,7 +222,7 @@ impl VakintWrapper {
     #[new]
     pub fn new(
         run_time_decimal_precision: Option<u32>,
-        evaluation_order: Option<Vec<VakintEvaluationMethodWrapper>>,
+        evaluation_order: Option<Vec<PyRef<VakintEvaluationMethodWrapper>>>,
         epsilon_symbol: Option<String>,
         mu_r_sq_symbol: Option<String>,
         form_exe_path: Option<String>,
@@ -352,10 +328,11 @@ impl VakintWrapper {
         ))
     }
 
-    pub fn numerical_result_to_expression(&self, res: PyObject) -> PyResult<PythonExpression> {
-        let r = Python::with_gil(|py| res.extract::<NumericalEvaluationResultWrapper>(py))?;
-
-        let value = r.value.to_atom(State::get_symbol(
+    pub fn numerical_result_to_expression(
+        &self,
+        res: PyRef<NumericalEvaluationResultWrapper>,
+    ) -> PyResult<PythonExpression> {
+        let value = res.value.to_atom(State::get_symbol(
             self.vakint.settings.epsilon_symbol.clone(),
         ));
         Ok(value.into())

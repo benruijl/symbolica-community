@@ -13,25 +13,27 @@ external_momenta = {
 # to_fix = vakint = Vakint(evaluation_order=eo)
 
 # It is of course possible to use defaults only, with
-vakint = Vakint()
-# vakint = Vakint(
-#     integral_normalization_factor="MSbar",
-#     mu_r_sq_symbol="mursq",
-#     number_of_terms_in_epsilon_expansion=4,
-#     evaluation_order=[
-#         VakintEvaluationMethod.new_alphaloop_method(),
-#         VakintEvaluationMethod.new_matad_method(),
-#         VakintEvaluationMethod.new_fmft_method(),
-#         VakintEvaluationMethod.new_pysecdec_method(
-#             min_n_evals=10_000,
-#             max_n_evals=1000_000,
-#             numerical_masses=masses,
-#             numerical_external_momenta=external_momenta
-#         ),
-#     ],
-#     form_exe_path="form",
-#     python_exe_path="python3",
-# )
+# vakint = Vakint()
+vakint = Vakint(
+    integral_normalization_factor="MSbar",
+    mu_r_sq_symbol="mursq",
+    # If you select 5 terms, then MATAD will be used, but for 4 and fewer, alphaLoop is will be used as
+    # it is first in the evaluation_order supplied.
+    number_of_terms_in_epsilon_expansion=4,
+    evaluation_order=[
+        VakintEvaluationMethod.new_alphaloop_method(),
+        VakintEvaluationMethod.new_matad_method(),
+        VakintEvaluationMethod.new_fmft_method(),
+        VakintEvaluationMethod.new_pysecdec_method(
+            min_n_evals=10_000,
+            max_n_evals=1000_000,
+            numerical_masses=masses,
+            numerical_external_momenta=external_momenta
+        ),
+    ],
+    form_exe_path="form",
+    python_exe_path="python3",
+)
 
 integral = E("""
         ( 
@@ -71,19 +73,20 @@ print(f"\nNumerical evaluation:\n{num_eval}")
 print(f"\nNumerical evaluation as list:\n{num_eval.to_list()}")
 
 # FIX: on my setup, the code below triggers an "out of bound" python crash, similar to before for new Vakint() setup
-# print(f"\nNumerical evaluation, as expression:\n{vakint.numerical_result_to_expression(num_eval)}")  # nopep8
+print(f"\nNumerical evaluation, as expression:\n{vakint.numerical_result_to_expression(num_eval)}")  # nopep8
 
 benchmark = VakintNumericalResult([
-    (-3, (0.0, 11440.53140354612)),
-    (-2, (0.0, 57169.95521898031)),
-    (-1, (0.0, 178748.9838377694)),
-    (-0, (0.0, 321554.1122184795)),
+    (-3, (0.0, -11440.53140354612)),
+    (-2, (0.0,  57169.95521898031)),
+    (-1, (0.0, -178748.9838377694)),
+    (-0, (0.0,  321554.1122184795)),
 ])
 
 # FIX: on my setup, the code below triggers an "out of bound" python crash, similar to before for new Vakint() setup
-# match_res, match_msg = benchmark.compare_to(
-#     num_eval, relative_threshold=1.0e-10
-# )
-# print(f"\nMatch result: {match_res}, {match_msg}")
+match_res, match_msg = benchmark.compare_to(
+    num_eval, relative_threshold=1.0e-10
+)
 
-# assert match_res
+print(f"\nMatch result: {match_res}, {match_msg}")
+
+assert match_res
