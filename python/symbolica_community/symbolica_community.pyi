@@ -7,6 +7,121 @@ from enum import Enum
 from typing import Any, Callable, overload, Iterator, Optional, Sequence, Tuple, List
 from decimal import Decimal
 
+# Start of Vakint API documentation
+
+
+class VakintEvaluationMethod:
+    """Class specifying the evaluation method to be used in vakint"""
+
+    @classmethod
+    def new_alphaloop_method(cls) -> VakintEvaluationMethod:
+        """Create a new AlphaLoop evaluation method (one to three loops)"""
+
+    @classmethod
+    def new_matad_method(cls,
+                         expand_masters: Optional[bool] = True,
+                         substitute_masters: Optional[bool] = True,
+                         substitute_hpls: Optional[bool] = True,
+                         direct_numerical_substitution: Optional[bool] = True) -> VakintEvaluationMethod:
+        """Create a new MATAD evaluation method (one to three loops, the latter with O(eps) contributions)"""
+
+    @classmethod
+    def new_fmft_method(cls,
+                        expand_masters: Optional[bool] = True,
+                        substitute_masters: Optional[bool] = True) -> VakintEvaluationMethod:
+        """Create a new FMFT four-loop evaluation method"""
+
+    @classmethod
+    def new_pysecdec_method(cls,
+                            quiet: Optional[bool] = True,
+                            relative_precision: Optional[float] = 1e-7,
+                            min_n_evals: Optional[int] = 10_000,
+                            max_n_evals: Optional[int] = 1_000_000_000_000,
+                            reuse_existing_output: Optional[str] = None,
+                            numerical_masses: Optional[dict[str, float]] = None,  # nopep8
+                            numerical_external_momenta: Optional[dict[int, Tuple[float, float, float, float]]] = None  # nopep8
+                            ) -> VakintEvaluationMethod:
+        """Create a new PySecDec evaluation method. 
+        Notice that the numerical masses and external momenta to be used during the evaluation must be specified here, it will default to empty if not specified."""
+
+
+class VakintExpression:
+    """Class representing an expression to be evaluated by vakint. Only useful for pretty-printing."""
+
+    def __new__(cls, expression: Expression) -> VakintExpression:
+        """Create a new vakint expression from a Symbolica expression"""
+
+    def to_atom(self) -> Expression:
+        """Convert the vakint expression to a Symbolica expression"""
+
+
+class VakintNumericalResult:
+    """Class representing a numerical result from a vakint evaluation"""
+
+    def __new__(cls, values: list[tuple[float, tuple[float, float]]]) -> VakintNumericalResult:
+        """Create a new numerical result from a list pairs (eps_power, (coeff_re, coeff_im))"""
+
+    def to_list(self) -> list[tuple[float, tuple[float, float]]]:
+        """Convert the numerical result to a list of pairs (eps_power, (coeff_re, coeff_im))"""
+
+    def compare_to(self, other: VakintNumericalResult, relative_threshold: float, error: Optional[VakintNumericalResult] = None, max_pull: Optional[float] = 3.0) -> tuple[bool, str]:
+        """Compare the numerical result to the numerical result 'other', possibly specifying the error of other, and with an acceptance relative threshold and allowed max pull.
+        Returns a tuple with a boolean indicating if the comparison was successful and a string with the comparison result."""
+
+    def __str__(self) -> str:
+        """Convert the numerical result to a string"""
+
+
+class Vakint:
+    """The vakint class specifying all options for the computation of single-scale vacuum integrals"""
+
+    def __new__(cls,
+                run_time_decimal_precision: Optional[int] = 17,
+                evaluation_order: Optional[list[VakintEvaluationMethod]] = None,
+                epsilon_symbol: Optional[str] = "ε",
+                mu_r_sq_symbol: Optional[str] = "mursq",
+                form_exe_path: Optional[str] = "form",
+                python_exe_path: Optional[str] = "python3",
+                verify_numerator_identification: Optional[bool] = True,
+                integral_normalization_factor: Optional[str] = "MSbar",
+                allow_unknown_integrals: Optional[bool] = True,
+                clean_tmp_dir: Optional[bool] = False,
+                number_of_terms_in_epsilon_expansion: Optional[int] = 4,
+                use_dot_product_notation: Optional[bool] = False,
+                temporary_directory: Optional[str] = None,
+                ) -> Vakint:
+        """Create a new vakint object, possibly with custom options.
+        Possible values for 'integral_normalization_factor' are 'MSbar', 'pySecDec' or 'FMFTandMATAD' or a string that will be parsed into an atom for the normalisation.
+        If 'evaluation_order' is not specified, then the default evaluation order is used.
+        """
+
+    def numerical_result_from_expression(self, expr: Expression) -> VakintNumericalResult:
+        """Creates a VakintNumericalResult object from a Symbolica expression."""
+
+    def numerical_result_to_expression(self, result: VakintNumericalResult) -> Expression:
+        """Converts a VakintNumericalResult object to a Symbolica expression."""
+
+    def numerical_evaluation(self, evaluated_integral: Expression,
+                             params: dict[str, float],
+                             externals: Optional[dict[int, tuple[float, float, float, float]]] = {}) -> tuple[VakintNumericalResult, VakintNumericalResult | None]:
+        """Numerically evaluates an integral already evaluated with the evaluate() function.
+        Masses and mu_r_sq must be specified in the params dictionary, and externals can optionally be supplied with the 'externals' option.
+        """
+
+    def to_canonical(self, integral: Expression, short_form: Optional[bool] = False) -> Expression:
+        """Converts an integral given as a Symbolica expression to its canonical form in Vakint. Optionally specify whether to canonicalize into the short form of the integral symbol."""
+
+    def tensor_reduce(self, integral: Expression) -> Expression:
+        """Performs a tensor reduction on the given integral."""
+
+    def evaluate_integral(self, integral: Expression) -> Expression:
+        """Evaluates an integral given as a Symbolica expression."""
+
+    def evaluate(self, integral: Expression) -> Expression:
+        """Canonicalize the integral given as a Symbolica expression, tensor reduce it, and evaluates it."""
+
+# End of Vakint API documentation
+
 
 def get_version() -> str:
     """Get the current Symbolica version."""
