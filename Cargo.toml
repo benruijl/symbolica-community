@@ -28,12 +28,5 @@ name = "symbolica_community"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-symbolica = { version = "0.11.0", features = ["python_no_module"] }
-pyo3 = { version = "0.20.0", features = ["abi3-py37"] }
-vakint = { git = "https://github.com/alphal00p/vakint", branch = "main", optional = true }
-#symbolica = { git = "https://github.com/benruijl/symbolica.git", features = [
-#    "python_no_module",
-#] }
-
-#[patch."https://github.com/alphal00p/vakint"]
-#symbolica = { git = "https://github.com/benruijl/symbolica.git" }
+symbolica = {version="0.12.1", features=["python_no_module"] }
+pyo3 = {version="0.20.0", features=["abi3-py37"]}
