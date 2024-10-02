@@ -5,7 +5,7 @@ use pyo3::types::PyType;
 use pyo3::{exceptions, pyclass, pymethods, FromPyObject, PyErr, PyRef, Python};
 use pyo3::{PyObject, PyResult};
 use symbolica::api::python::PythonExpression;
-use symbolica::atom::Atom;
+use symbolica::atom::{Atom, Symbol};
 use symbolica::domains::float::{Complex, Float, RealNumberLike};
 use symbolica::state::State;
 use vakint::{
@@ -223,8 +223,8 @@ impl VakintWrapper {
     pub fn new(
         run_time_decimal_precision: Option<u32>,
         evaluation_order: Option<Vec<PyRef<VakintEvaluationMethodWrapper>>>,
-        epsilon_symbol: Option<String>,
-        mu_r_sq_symbol: Option<String>,
+        epsilon_symbol: Option<Symbol>,
+        mu_r_sq_symbol: Option<Symbol>,
         form_exe_path: Option<String>,
         python_exe_path: Option<String>,
         verify_numerator_identification: Option<bool>,
@@ -264,11 +264,21 @@ impl VakintWrapper {
         } else {
             EvaluationOrder::all()
         };
+        let eps_symbol = if let Some(es) = epsilon_symbol {
+            es.to_string()
+        } else {
+            "ε".into()
+        };
+        let mu_r_sq_sym = if let Some(ms) = mu_r_sq_symbol {
+            ms.to_string()
+        } else {
+            "mursq".into()
+        };
         #[allow(clippy::needless_update)]
         let vakint = Vakint::new(Some(VakintSettings {
             run_time_decimal_precision: run_time_decimal_precision.unwrap_or(17),
-            epsilon_symbol: epsilon_symbol.unwrap_or("ε".into()),
-            mu_r_sq_symbol: mu_r_sq_symbol.unwrap_or("mursq".into()),
+            epsilon_symbol: eps_symbol,
+            mu_r_sq_symbol: mu_r_sq_sym,
             form_exe_path: form_exe_path.unwrap_or("form".into()),
             python_exe_path: python_exe_path.unwrap_or("python3".into()),
             verify_numerator_identification: verify_numerator_identification.unwrap_or(true),

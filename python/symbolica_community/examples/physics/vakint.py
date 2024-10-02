@@ -1,6 +1,6 @@
 from symbolica_community import Vakint, VakintEvaluationMethod, VakintExpression, VakintNumericalResult
 import symbolica_community as sb
-from symbolica_community import E
+from symbolica_community import E, S
 
 masses = {"muvsq": 2., "mursq": 3.}
 external_momenta = {
@@ -16,7 +16,7 @@ external_momenta = {
 # vakint = Vakint()
 vakint = Vakint(
     integral_normalization_factor="MSbar",
-    mu_r_sq_symbol="mursq",
+    mu_r_sq_symbol=S("mursq"),
     # If you select 5 terms, then MATAD will be used, but for 4 and fewer, alphaLoop is will be used as
     # it is first in the evaluation_order supplied.
     number_of_terms_in_epsilon_expansion=4,
