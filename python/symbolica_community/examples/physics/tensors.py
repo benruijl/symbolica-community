@@ -1,20 +1,25 @@
-from symbolica_community import Expression, E, TensorNetwork
+from symbolica_community import Expression, S,E, TensorNetwork
 import symbolica_community
 import random
 
-x = Expression.parse(
-    "γ(aind(loru(4,3),bis(4,2),bis(4,13)))*\
-       ( P(2,aind(lord(4,11)))*γ(aind(loru(4,11),bis(4,13),bis(4,1))) + mq*id(aind(bis(4,13),bis(4,1))) )*\
-       W(1,aind(bis(4,2))) * W(3,aind(lord(4,3)))")
+
+mu = E("mink(4,mu)")
+nu = E("mink(4,nu)")
+i = E("bis(4,i)")
+j = E("bis(4,j)")
+k = E("bis(4,k)")
+gamma,p,w,mq,id = S("γ","P","W","mq","id")
+x = gamma(mu,i,k)*(p(2,nu)*gamma(nu,k,j)+mq*id(k,j))*w(1,i)*w(3,mu)
+
 tn = TensorNetwork(x)
 tn.contract()
 t = tn.result()
 print(t)
 params = [E("𝑖")]
 
-params += TensorNetwork(E("W(1,aind(bis(4,2)))")).result()
-params += TensorNetwork(E("W(3,aind(bis(4,2)))")).result()
-params += TensorNetwork(E("P(2,aind(lord(4,2)))")).result()
+params += TensorNetwork(E("W(1,bis(4,2))")).result()
+params += TensorNetwork(E("W(3,bis(4,2))")).result()
+params += TensorNetwork(E("P(2,mink(4,2))")).result()
 constants = {E("mq"): E("173")}
 e=t.evaluator(constants=constants, params=params, functions={})
 c = e.compile("f","ff","fff")
