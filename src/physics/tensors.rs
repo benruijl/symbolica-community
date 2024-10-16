@@ -9,7 +9,7 @@ use pyo3::{
 
 use spenso::{
     complex::{RealOrComplex, RealOrComplexTensor},
-    data::{DataTensor, GetTensorData, SetTensorData},
+    data::{DataTensor, GetTensorData, SetTensorData,SparseOrDense},
     network::TensorNetwork,
     parametric::{
         CompiledEvalTensor, ConcreteOrParam, LinearizedEvalTensor, MixedTensor, ParamOrConcrete,
@@ -313,6 +313,13 @@ impl Spensor {
             .ok_or_else(|| PyRuntimeError::new_err("No scalar found"))
     }
 
+
+    fn to_dense(&mut self){
+        self.tensor = self.tensor.clone().to_dense();
+        // self.tensor =
+        // self.tensor.to_dense();
+    }
+
     fn __repr__(&self) -> String {
         format!("{:?}", self.tensor)
     }
@@ -385,6 +392,7 @@ impl SpensoNet {
         self.network.contract();
         Ok(())
     }
+
 
     fn result(&self) -> PyResult<Spensor> {
         Ok(Spensor {

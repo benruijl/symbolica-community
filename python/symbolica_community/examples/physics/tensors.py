@@ -21,9 +21,14 @@ params += TensorNetwork(w(3,mu)).result()
 params += TensorNetwork(p(2,nu)).result()
 constants = {mq: E("173")}
 e=t.evaluator(constants=constants, params=params, functions={})
-c = e.compile("f","ff","fff")
+c = e.compile(function_name="f", filename="test_expression.cpp",
+              library_name="test_expression.so", inline_asm=False)
 
 
 e_params = [random.random()+1j*random.random() for i in range(len(params))]
 
 print(c.evaluate_complex([e_params])[0])
+
+t = TensorNetwork(gamma(mu,i,i)).result()
+t.to_dense()
+print(t)

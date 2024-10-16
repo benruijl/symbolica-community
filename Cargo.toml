@@ -37,8 +37,3 @@ vakint = { git = "https://github.com/alphal00p/vakint", branch = "main", optiona
 spenso = { git = "https://github.com/alphal00p/spenso", branch = "master", optional = true, features = [
     "shadowing",
 ] }
-
-
-# spenso = { path = "../../../alphal00p/spenso", optional = true, features = [
-#     "shadowing",
-# ] }
