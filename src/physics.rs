@@ -7,7 +7,11 @@ use vakint::{
     VakintWrapper,
 };
 
-use pyo3::{pyfunction, types::PyModule, wrap_pyfunction, PyResult};
+use pyo3::{
+    pyfunction,
+    types::{PyAnyMethods, PyModule, PyModuleMethods},
+    wrap_pyfunction, Bound, PyResult,
+};
 use symbolica::api::python::PythonExpression;
 
 /// Compute the Diract trace.
@@ -16,7 +20,7 @@ fn python_trace(a: PythonExpression) -> PythonExpression {
     trace::trace(a.expr.as_view()).into()
 }
 
-pub(crate) fn initialize(m: &PyModule) -> PyResult<()> {
+pub(crate) fn initialize(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.getattr("Expression")?
         .setattr("trace", wrap_pyfunction!(python_trace, m)?)?;
 

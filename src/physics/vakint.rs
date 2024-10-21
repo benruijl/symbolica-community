@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::env;
 
-use pyo3::types::PyType;
-use pyo3::{exceptions, pyclass, pymethods, FromPyObject, PyErr, PyRef, Python};
+use pyo3::types::{PyAnyMethods, PyType};
+use pyo3::{exceptions, pyclass, pymethods, Bound, FromPyObject, PyAny, PyErr, PyRef, Python};
 use pyo3::{PyObject, PyResult};
 use symbolica::api::python::PythonExpression;
 use symbolica::atom::{Atom, Symbol};
@@ -29,9 +29,11 @@ pub struct NumericalEvaluationResultWrapper {
 }
 
 impl<'a> FromPyObject<'a> for NumericalEvaluationResultWrapper {
-    fn extract(ob: &'a pyo3::PyAny) -> PyResult<Self> {
-        if let Ok(a) = ob.extract::<NumericalEvaluationResultWrapper>() {
-            Ok(NumericalEvaluationResultWrapper { value: a.value })
+    fn extract_bound(ob: &Bound<'a, PyAny>) -> PyResult<Self> {
+        if let Ok(a) = ob.downcast::<NumericalEvaluationResultWrapper>() {
+            Ok(NumericalEvaluationResultWrapper {
+                value: a.borrow().value.clone(),
+            })
         } else {
             Err(exceptions::PyValueError::new_err(
                 "Not a valid vakint numerical resuls (Laurent series in epsilon)",
@@ -70,6 +72,7 @@ impl NumericalEvaluationResultWrapper {
         Ok(NumericalEvaluationResultWrapper { value: r })
     }
 
+    #[pyo3(signature = (other, relative_threshold, error = None, max_pull = None))]
     pub fn compare_to(
         &self,
         other: PyRef<NumericalEvaluationResultWrapper>,
@@ -92,7 +95,7 @@ pub struct VakintExpressionWrapper {
 }
 
 impl<'a> FromPyObject<'a> for VakintExpressionWrapper {
-    fn extract(ob: &'a pyo3::PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'a, PyAny>) -> PyResult<Self> {
         if let Ok(a) = ob.extract::<VakintExpressionWrapper>() {
             Ok(VakintExpressionWrapper { value: a.value })
         } else {
@@ -129,7 +132,7 @@ pub struct VakintEvaluationMethodWrapper {
 }
 
 impl<'a> FromPyObject<'a> for VakintEvaluationMethodWrapper {
-    fn extract(ob: &'a pyo3::PyAny) -> PyResult<Self> {
+    fn extract_bound(ob: &Bound<'a, PyAny>) -> PyResult<Self> {
         if let Ok(a) = ob.extract::<VakintEvaluationMethodWrapper>() {
             Ok(VakintEvaluationMethodWrapper { method: a.method })
         } else {
@@ -147,15 +150,18 @@ impl VakintEvaluationMethodWrapper {
     }
 
     #[classmethod]
-    pub fn new_alphaloop_method(_cls: &PyType) -> PyResult<VakintEvaluationMethodWrapper> {
+    pub fn new_alphaloop_method(
+        _cls: &Bound<'_, PyType>,
+    ) -> PyResult<VakintEvaluationMethodWrapper> {
         Ok(VakintEvaluationMethodWrapper {
             method: EvaluationMethod::AlphaLoop,
         })
     }
 
+    #[pyo3(signature = (expand_masters = None, susbstitute_masters = None, substitute_hpls = None, direct_numerical_substition = None))]
     #[classmethod]
     pub fn new_matad_method(
-        _cls: &PyType,
+        _cls: &Bound<'_, PyType>,
         expand_masters: Option<bool>,
         susbstitute_masters: Option<bool>,
         substitute_hpls: Option<bool>,
@@ -171,9 +177,10 @@ impl VakintEvaluationMethodWrapper {
         })
     }
 
+    #[pyo3(signature = (expand_masters = None, susbstitute_masters = None))]
     #[classmethod]
     pub fn new_fmft_method(
-        _cls: &PyType,
+        _cls: &Bound<'_, PyType>,
         expand_masters: Option<bool>,
         susbstitute_masters: Option<bool>,
     ) -> PyResult<VakintEvaluationMethodWrapper> {
@@ -185,10 +192,11 @@ impl VakintEvaluationMethodWrapper {
         })
     }
 
+    #[pyo3(signature = (quiet = None, relative_precision = None, min_n_evals = None, max_n_evals = None, reuse_existing_output = None, numerical_masses = None, numerical_external_momenta = None))]
     #[allow(clippy::too_many_arguments)]
     #[classmethod]
     pub fn new_pysecdec_method(
-        _cls: &PyType,
+        _cls: &Bound<'_, PyType>,
         quiet: Option<bool>,
         relative_precision: Option<f64>,
         min_n_evals: Option<u64>,
@@ -218,6 +226,7 @@ impl VakintEvaluationMethodWrapper {
 
 #[pymethods]
 impl VakintWrapper {
+    #[pyo3(signature = (run_time_decimal_precision = None, evaluation_order = None, epsilon_symbol = None, mu_r_sq_symbol = None, form_exe_path = None, python_exe_path = None, verify_numerator_identification = None, integral_normalization_factor = None, allow_unknown_integrals = None, clean_tmp_dir = None, number_of_terms_in_epsilon_expansion = None, use_dot_product_notation = None, temporary_directory = None))]
     #[allow(clippy::too_many_arguments)]
     #[new]
     pub fn new(
@@ -313,6 +322,7 @@ impl VakintWrapper {
         Ok(NumericalEvaluationResultWrapper { value })
     }
 
+    #[pyo3(signature = (evaluated_integral, params, externals = None))]
     pub fn numerical_evaluation(
         &self,
         evaluated_integral: PyObject,
@@ -348,6 +358,7 @@ impl VakintWrapper {
         Ok(value.into())
     }
 
+    #[pyo3(signature = (a, short_form = None))]
     pub fn to_canonical(
         &self,
         a: PythonExpression,
