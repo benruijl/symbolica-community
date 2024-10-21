@@ -1,0 +1,7 @@
+.envrc
+flake.nix
+flake.lock
+/.direnv
+/.venv
+/.zed
+/target
