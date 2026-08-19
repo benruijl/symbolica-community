@@ -17,6 +17,8 @@ The Spenso Python API provides powerful tools for:
 
 """
 
+from ..spenso_native import initialize_module
 from ..spenso_native import *
 
 initialize_module()
+del initialize_module

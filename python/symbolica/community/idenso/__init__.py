@@ -8,6 +8,8 @@ Common tensor algebra simpifications using spenso tensor notation
 
 """
 
+from ..idenso_native import initialize_module
 from ..idenso_native import *
 
 initialize_module()
+del initialize_module

@@ -7,4 +7,3 @@ def add_two(atom: Expression) -> Expression:
     r"""
     Add two to an atom.
     """
-

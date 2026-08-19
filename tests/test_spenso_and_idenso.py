@@ -6,14 +6,13 @@ import pytest
 from symbolica import E, Expression, S
 from symbolica.community.spenso import (
     ExecutionMode,
-    LibraryTensor,
     Representation,
     Slot,
     Tensor,
-    TensorIndices,
+    TensorExpression,
     TensorLibrary,
     TensorNetwork,
-    TensorStructure,
+    as_tensor,
 )
 from symbolica.community.spenso import TensorName as N
 
@@ -28,11 +27,9 @@ class TestNotebookBasics:
         assert S is not None
         assert E is not None
         assert N is not None
-        assert LibraryTensor is not None
         assert TensorNetwork is not None
         assert Representation is not None
-        assert TensorStructure is not None
-        assert TensorIndices is not None
+        assert TensorExpression is not None
         assert Tensor is not None
         assert Slot is not None
         assert TensorLibrary is not None
@@ -99,8 +96,8 @@ class TestTensorNames:
     def test_create_tensor_names(self):
         """Test creating tensor names"""
         gamma = N.gamma()
-        p = N("P")
-        w = N("w")
+        p = N.vector("notebook_P")
+        w = N.vector("notebook_w")
         g = N.g()
         mq = S("mq")
 
@@ -111,11 +108,11 @@ class TestTensorNames:
         assert mq is not None
 
 
-class TestTensorIndices:
-    """Tests for tensor indices operations."""
+class TestTensorExpressionLayout:
+    """Tests for tensor-expression construction and logical layout indexing."""
 
     def setup_method(self):
-        """Set up common objects for tensor indices tests."""
+        """Set up common objects for tensor-expression tests."""
         self.bis = Representation.bis(4)
         self.mink = Representation.mink(4)
         self.i = self.bis("i")
@@ -123,44 +120,45 @@ class TestTensorIndices:
         self.k = self.bis(S("k"))
         self.mu = self.mink("mu")
         self.nu = self.mink("nu")
-        self.gamma = N.gamma()
-        self.p = N("P")
-        self.w = N("w")
+        self.gamma = N.gamma()(self.mink, self.bis, self.bis)
+        self.p = N.vector("notebook_P")
+        self.w = N.vector("notebook_w")
         self.g = N.g()
         self.mq = S("mq")
 
-    def test_create_tensor_indices(self):
-        """Test creating tensor indices"""
-        other_g = self.gamma(self.i, self.k, self.mu)
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+    def test_create_tensor_expression(self):
+        """Calling a TensorName with slots creates a TensorExpression."""
+        gamma = self.gamma(self.mu, self.i, self.k)
 
-        assert other_g is not None
-        assert g_muik is not None
-        assert str(g_muik) is not None
-        assert str(other_g) is not None
+        assert isinstance(gamma, TensorExpression)
+        assert str(gamma) is not None
 
-    def test_tensor_indices_indexing(self):
-        """Test indexing tensor indices"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
-        result = g_muik[2]
-        assert result is not None
+    def test_tensor_expression_flat_to_expanded_indexing(self):
+        """A flat position expands in logical interface order."""
+        gamma = self.gamma(self.mu, self.i, self.k)
+        assert gamma[2] == [0, 0, 2]
 
     def test_tensor_to_expression(self):
         """Test converting tensor to expression"""
-        expr = self.gamma(self.k, self.j, self.mu).to_expression()
+        expr = self.gamma(self.mu, self.k, self.j).to_expression()
         assert expr is not None
 
     def test_tensor_slicing(self):
         """Test tensor slicing"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
-        result = g_muik[45:63:3]
-        assert result is not None
+        gamma = self.gamma(self.mu, self.i, self.k)
+        assert gamma[45:63:3] == [
+            [2, 3, 1],
+            [3, 0, 0],
+            [3, 0, 3],
+            [3, 1, 2],
+            [3, 2, 1],
+            [3, 3, 0],
+        ]
 
     def test_tensor_multi_indexing(self):
         """Test tensor multi-indexing"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
-        result = g_muik[[2, 2, 2]]
-        assert result is not None
+        gamma = self.gamma(self.mu, self.i, self.k)
+        assert gamma[[2, 2, 2]] == 42
 
 
 class TestTensorNetwork:
@@ -175,40 +173,40 @@ class TestTensorNetwork:
         self.k = self.bis(S("k"))
         self.mu = self.mink("mu")
         self.nu = self.mink("nu")
-        self.gamma = N.gamma()
-        self.p = N("P")
-        self.w = N("w")
+        self.gamma = N.gamma()(self.mink, self.bis, self.bis)
+        self.p = N.vector("notebook_P")
+        self.w = N.vector("notebook_w")
         self.g = N.g()
         self.mq = S("mq")
 
     def test_tensor_network_creation(self):
         """Test creating tensor network from expression"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+        g_muik = self.gamma(self.mu, self.i, self.k)
         x = (
             g_muik
             * (
-                self.p(2, self.nu) * self.gamma(self.k, self.j, self.nu)
+                self.p(2, self.nu) * self.gamma(self.nu, self.k, self.j)
                 + self.mq * self.g(self.k, self.j)
             )
             * self.w(1, self.i)
             * self.w(3, self.mu)
-        )
+        ).with_name(N("notebook_network_creation"))
 
         canonical_str = x.to_canonical_string()
         assert canonical_str is not None
 
     def test_tensor_network_graph(self):
         """Test tensor network graph creation"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+        g_muik = self.gamma(self.mu, self.i, self.k)
         x = (
             g_muik
             * (
-                self.p(2, self.nu) * self.gamma(self.k, self.j, self.nu)
+                self.p(2, self.nu) * self.gamma(self.nu, self.k, self.j)
                 + self.mq * self.g(self.k, self.j)
             )
             * self.w(1, self.i)
             * self.w(3, self.mu)
-        )
+        ).with_name(N("notebook_network_graph"))
 
         tn = TensorNetwork(x)
         # prints the rich graph associated to the network
@@ -217,16 +215,16 @@ class TestTensorNetwork:
 
     def test_tensor_network_execution_scalar(self):
         """Test tensor network execution in scalar mode"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+        g_muik = self.gamma(self.mu, self.i, self.k)
         x = (
             g_muik
             * (
-                self.p(2, self.nu) * self.gamma(self.k, self.j, self.nu)
+                self.p(2, self.nu) * self.gamma(self.nu, self.k, self.j)
                 + self.mq * self.g(self.k, self.j)
             )
             * self.w(1, self.i)
             * self.w(3, self.mu)
-        )
+        ).with_name(N("notebook_network_partial_result"))
         tn = TensorNetwork(x)
 
         result = tn.execute(n_steps=2, mode=ExecutionMode.Scalar)
@@ -248,16 +246,16 @@ class TestTensorNetwork:
 
     def test_tensor_network_full_execution(self):
         """Test full tensor network execution and result"""
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+        g_muik = self.gamma(self.mu, self.i, self.k)
         x = (
             g_muik
             * (
-                self.p(2, self.nu) * self.gamma(self.k, self.j, self.nu)
+                self.p(2, self.nu) * self.gamma(self.nu, self.k, self.j)
                 + self.mq * self.g(self.k, self.j)
             )
             * self.w(1, self.i)
             * self.w(3, self.mu)
-        )
+        ).with_name(N("notebook_network_result"))
         tn = TensorNetwork(x)
 
         tn.execute()
@@ -282,23 +280,23 @@ class TestTensorEvaluation:
         self.k = self.bis(S("k"))
         self.mu = self.mink("mu")
         self.nu = self.mink("nu")
-        self.gamma = N.gamma()
-        self.p = N("P")
-        self.w = N("w")
+        self.gamma = N.gamma()(self.mink, self.bis, self.bis)
+        self.p = N.vector("notebook_P")
+        self.w = N.vector("notebook_w")
         self.g = N.g()
         self.mq = S("mq")
 
         # Create tensor network and execute
-        g_muik = TensorIndices(self.i, self.k, self.mu, name=self.gamma)
+        g_muik = self.gamma(self.mu, self.i, self.k)
         x = (
             g_muik
             * (
-                self.p(2, self.nu) * self.gamma(self.k, self.j, self.nu)
+                self.p(2, self.nu) * self.gamma(self.nu, self.k, self.j)
                 + self.mq * self.g(self.k, self.j)
             )
             * self.w(1, self.i)
             * self.w(3, self.mu)
-        )
+        ).with_name(N("notebook_evaluation_result"))
         tn = TensorNetwork(x)
         tn.execute()
         self.t = tn.result_tensor()
@@ -345,18 +343,19 @@ class TestTensorEvaluation:
         assert c is not None
 
 
-class TestLibraryTensors:
-    """Tests for library tensor operations."""
+class TestStoredTensors:
+    """Tests for stored tensors and library registration."""
 
-    def test_sparse_library_tensor(self):
-        """Test creating and manipulating sparse library tensors"""
+    def test_sparse_tensor(self):
+        """Test creating and manipulating a sparse tensor."""
         custom = Representation("custom", 4, is_self_dual=False)
         mq = S("mq")
 
-        t = LibraryTensor.sparse([custom, custom], type(mq))
-        # Note that the structure is a list of representations, not slots
+        descriptor = as_tensor(N("notebook_sparse")(custom, custom))
+        t = Tensor.sparse(descriptor, type(mq))
         structure = t.structure()
-        assert structure is not None
+        assert isinstance(structure, TensorExpression)
+        assert structure.interface == (custom, custom)
 
         # Set individual elements
         t[6] = E("f(x)*(1+y)")
@@ -371,14 +370,18 @@ class TestLibraryTensors:
         t.to_dense()
         assert t is not None
 
-    def test_dense_library_tensor_and_network(self):
-        """Test creating dense library tensor and tensor network"""
+    def test_dense_tensor_and_network(self):
+        """Test creating a dense tensor and registering it in a network library."""
         d = Representation("newrep", 3)
-        tname = S("test")
+        left = N.vector("notebook_library_left")
+        right = N.vector("notebook_library_right")
+        definition = as_tensor(left(d)).outer(as_tensor(right(d))).with_name(
+            N("notebook_library_matrix")
+        )
 
         # Dense tensors are built from a list of values in row-major order.
-        t = LibraryTensor.dense(
-            TensorStructure(d, d, name=tname),
+        t = Tensor.dense(
+            definition,
             [0, 0, 123, 11, 3, 234, 234, 23, 44],
         )
 
@@ -390,9 +393,14 @@ class TestLibraryTensors:
         lib = TensorLibrary.hep_lib()
         lib.register(t)
 
-        new_t = t.structure()
+        composite = t.structure()
+        new_t = lib[definition.name]
+        assert composite.to_expression() == definition.to_expression()
+        assert new_t.to_expression() != composite.to_expression()
 
-        x = new_t(1, 2) * new_t(2, 3) * new_t(3, 1)
+        x = (new_t(1, 2) * new_t(2, 3) * new_t(3, 1)).with_name(
+            N("notebook_library_trace_result")
+        )
         n = TensorNetwork(x, library=lib)
         n.execute(library=lib)
         result_t = n.result_tensor(library=lib)
@@ -477,7 +485,10 @@ class TestIdensoSimplifications:
         """Test metric simplification with tensor"""
         from symbolica.community.idenso import simplify_metrics
 
-        result = simplify_metrics(self.bis.g(4, 2) * self.gam(2, 3, 1))
+        result = simplify_metrics(
+            self.bis.g(4, 2).to_expression()
+            * self.gam(2, 3, 1).to_expression()
+        )
         assert result is not None
 
     def test_simplify_metrics_bis_trace(self):
@@ -514,10 +525,10 @@ class TestIdensoSimplifications:
             return self.ps(m)
 
         a = simplify_gamma(
-            self.gam(1, 2, 1)
-            * self.gam(2, 3, "mu")
-            * self.gam(3, 4, 1)
-            * self.gam(4, 1, 2)
+            self.gam(1, 2, 1).to_expression()
+            * self.gam(2, 3, "mu").to_expression()
+            * self.gam(3, 4, 1).to_expression()
+            * self.gam(4, 1, 2).to_expression()
             * p("mu")
             * p(2)
         )
@@ -541,10 +552,10 @@ class TestIdensoSimplifications:
             return self.ps(m)
 
         a = simplify_gamma(
-            self.gam(1, 2, 1)
-            * self.gam(2, 3, "mu")
-            * self.gam(3, 4, 1)
-            * self.gam(4, 1, 2)
+            self.gam(1, 2, 1).to_expression()
+            * self.gam(2, 3, "mu").to_expression()
+            * self.gam(3, 4, 1).to_expression()
+            * self.gam(4, 1, 2).to_expression()
             * p("mu")
             * p(2)
         )
@@ -572,11 +583,13 @@ def test_notebook_integration():
     i = bis("i")
 
     # Create tensor names
-    gamma = N.gamma()
-    w = N("w")
+    gamma = N.gamma()(mink, bis, bis)
+    w = N.vector("notebook_w")
 
     # Create simple tensor expression
-    expr = gamma(i, i, mu) * w(1, mu)
+    expr = (gamma(mu, i, i) * w(1, mu)).with_name(
+        N("notebook_integration_result")
+    )
 
     # Create and execute tensor network
     tn = TensorNetwork(expr)
