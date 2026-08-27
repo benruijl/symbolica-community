@@ -8,7 +8,7 @@ license = "MIT"
 name = "symbolica_community"
 readme = "Readme.md"
 repository = "https://github.com/benruijl/symbolica-community"
-rust-version = "1.88"
+rust-version = "1.89"
 version = "2.2.0"
 exclude = ["dist"]
 
@@ -26,6 +26,7 @@ module = ["pyo3/abi3", "symbolica/python_abi3"] # incompatible with stub_gen
 python_stubgen = [
     "pyo3-stub-gen",
     "symbolica/python_stubgen",
+    "feynkit-py/python_stubgen",
     "spynso3/python_stubgen",
     "idenso/python_stubgen",
     "vakint/python_stubgen",
@@ -34,6 +35,7 @@ python_stubgen = [
 
 [dependencies]
 example_extension = { path = "example_extension" }
+feynkit-py = { git = "https://github.com/alphal00p/gammaloop", rev = "1452e93b3fe3e14554653680bda64032f435bb0f" }
 idenso = { version = "0.3", features = ["bincode", "python"] }
 symbolica = { version = "2.2", features = ["python_export"] }
 symbolica-integrate = { version = "1.0", features = ["steps"] }
@@ -55,9 +57,17 @@ idenso = { git = "https://github.com/alphal00p/gammaloop", rev = "fff1d66ee7ca03
 spenso = { git = "https://github.com/alphal00p/gammaloop", rev = "fff1d66ee7ca039b9e165fe8d29da91f4c27113c" }
 spenso-hep-lib = { git = "https://github.com/alphal00p/gammaloop", rev = "fff1d66ee7ca039b9e165fe8d29da91f4c27113c" }
 
-symbolica = { git = "https://github.com/symbolica-dev/symbolica", branch = "main" }
-numerica = { git = "https://github.com/symbolica-dev/symbolica", branch = "main" }
-graphica = { git = "https://github.com/symbolica-dev/symbolica", branch = "main" }
+symbolica = { git = "https://github.com/symbolica-dev/symbolica", rev = "0441bd7a511209dce2ca99925fe87f8b18e4bf03" }
+numerica = { git = "https://github.com/symbolica-dev/symbolica", rev = "0441bd7a511209dce2ca99925fe87f8b18e4bf03" }
+graphica = { git = "https://github.com/symbolica-dev/symbolica", rev = "0441bd7a511209dce2ca99925fe87f8b18e4bf03" }
+
+[patch."https://github.com/alphal00p/gammaloop"]
+# Linnet carries GammaLoop's generated Hakari feature-unification crate on
+# x86_64 Linux. It is not runtime functionality and leaks the whole GammaLoop
+# workspace into downstream FeynKit consumers, so replace it with a minimal
+# compatibility package that preserves its handwritten feature anchors until
+# that upstream dependency is removed.
+gammaloop-workspace-hack = { path = "compat/gammaloop-workspace-hack" }
 
 [build-dependencies]
 pyo3-build-config = "*"

@@ -1,0 +1,39 @@
+name: Check FeynKit revision
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - scripts/check_feynkit_revision.py
+      - scripts/test_check_feynkit_revision.py
+      - .github/workflows/check_feynkit.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - Cargo.toml
+      - Cargo.lock
+      - scripts/check_feynkit_revision.py
+      - scripts/test_check_feynkit_revision.py
+      - .github/workflows/check_feynkit.yml
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  branch-tip:
+    name: Compare the pin with the FeynKit branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Test the revision checker
+        run: python -m unittest scripts.test_check_feynkit_revision
+      - name: Check the upstream revision
+        run: python scripts/check_feynkit_revision.py

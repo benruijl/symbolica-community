@@ -22,6 +22,7 @@ Currently, `symbolica-community` integrates with the following packages:
 - [spenso](https://github.com/alphal00p/spenso): perform tensor network computations
 - [idenso](https://github.com/alphal00p/spenso): perform Dirac and color algebra
 - [vakint](https://github.com/alphal00p/vakint): compute massive vacuum bubbles
+- [FeynKit](https://github.com/alphal00p/gammaloop): load particle-physics models, generate Feynman diagrams and Cross-Free Families, and work with relativistic kinematics and jets
 
 
 ## Usage
@@ -36,11 +37,24 @@ To use extensions, for example `vakint`, write
 
 ```python
 import symbolica.community.vakint import *
-````
+```
+
+For FeynKit, a qualified import keeps the physics API easy to read:
+
+```python
+import symbolica.community.feynkit as fk
+
+p = fk.ThreeMomentum(3.0, 4.0, 0.0).on_shell(mass=12.0)
+assert p.mass_squared == 144.0
+```
+
+The focused [FeynKit tutorials](examples/feynkit/) cover models, diagram
+generation, CFF expressions, kinematics, and jet clustering in both Jupyter
+and native Marimo formats.
 
 #### Installation 
 
-This package can be installed for Python >3.5 using `pip`:
+This package can be installed for Python 3.7 or newer using `pip`:
 
 ```sh
 pip install symbolica
@@ -49,8 +63,10 @@ pip install symbolica
 or can be manually built using `maturin`:
 
 ```bash
-cargo run --features "python_stubgen" --no-default-features # generate type hints
-maturin build --release
+# Generate all type hints, or regenerate only the native FeynKit bindings.
+cargo run --locked --features "python_stubgen" --no-default-features
+cargo run --locked --features "python_stubgen" --no-default-features --bin stub_gen -- --feynkit-only
+maturin build --release --locked
 ```
 
 
@@ -65,7 +81,7 @@ If you are developing a Rust crate, your crate can be added to `symbolica-commun
   - Extend the feature list: `python_stubgen = ["symbolica/python_stubgen", "example/python_stubgen"]`
   - Extend the dependencies: `example = { git = "..." }`
 - Register your crate as a submodule in `lib.rs` by extending the `core` function:
-  - `register_extension::<example::CommunityModule>(m)?;`
+  - `register_module!(m, example::CommunityModule);`
 
 
 ## Note for macOS users using GNU gcc installed with MacPorts

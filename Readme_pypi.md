@@ -32,7 +32,7 @@ You are able to perform these operations from the comfort of a programming langu
 
 # Installation
 
-Symbolica can be installed for Python >3.5 using `pip`:
+Symbolica can be installed for Python 3.7 or newer using `pip`:
 
 ```sh
 pip install symbolica
@@ -103,12 +103,25 @@ The PyPi version of Symbolica ships with the following community packages:
 - [spenso](https://github.com/alphal00p/spenso): perform tensor network computations
 - [idenso](https://github.com/alphal00p/spenso): perform Dirac and color algebra
 - [vakint](https://github.com/alphal00p/vakint): compute massive vacuum bubbles
+- [FeynKit](https://github.com/alphal00p/gammaloop): particle-physics models, Feynman diagrams, Cross-Free Families, relativistic kinematics, and jet clustering
 
 They can be accessed through:
 
 ```python
 import symbolica.community.spenso
 ```
+
+FeynKit is typically imported with a short, qualified namespace:
+
+```python
+import symbolica.community.feynkit as fk
+
+p = fk.ThreeMomentum(3.0, 4.0, 0.0).on_shell(mass=12.0)
+```
+
+Loading raw UFO model directories is optional and requires Python 3.11 or
+newer: `pip install "symbolica[feynkit-ufo]"`. Normalized JSON models, diagram
+generation, CFF construction, and kinematics require no extra Python package.
 
 Example use can be found [here](https://github.com/benruijl/symbolica-community/tree/main/examples).
 

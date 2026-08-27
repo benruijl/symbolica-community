@@ -8,6 +8,62 @@ on:
     workflow_dispatch:
 
 jobs:
+    rust-msrv:
+        name: Check Rust 1.89 feature sets
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python 3.10
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.10"
+
+            - name: Set up Rust 1.89
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  toolchain: "1.89.0"
+
+            - name: Check default Rust features
+              run: cargo check --locked
+
+            - name: Check Python stub generation features
+              run: cargo check --locked --no-default-features --features python_stubgen
+
+            - name: Check the generated native FeynKit stub
+              run: |
+                  cargo run --locked --no-default-features --features python_stubgen --bin stub_gen -- --feynkit-only
+                  git diff --exit-code -- python/symbolica/community/feynkit/__init__.pyi
+
+    feynkit-ufo:
+        name: Test the optional UFO loader on Python 3.11
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python 3.11
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Build wheel
+              uses: PyO3/maturin-action@v1
+              with:
+                  command: build
+                  args: --out dist --locked
+                  sccache: "true"
+
+            - name: Install the wheel, UFO extra, and notebook runner
+              run: |
+                  pip install dist/*.whl
+                  pip install "ufo-model-loader>=0.1.6" ipykernel nbclient nbformat
+
+            - name: Load the raw UFO fixture and execute its tutorial
+              env:
+                  PYTHONDONTWRITEBYTECODE: "1"
+                  SYMBOLICA_LICENSE_KEY: ${{ secrets.SYMBOLICA_LICENSE_KEY }}
+              run: python scripts/check_feynkit_ufo.py
+
     test:
         name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
@@ -29,18 +85,28 @@ jobs:
               uses: PyO3/maturin-action@v1
               with:
                   command: build
-                  args: --out dist
+                  args: --out dist --locked
                   sccache: "true"
 
             - name: Install package and test dependencies
               run: |
                   pip install dist/*.whl
-                  pip install pytest
+                  pip install ipykernel marimo nbclient nbformat pytest
+
+            - name: Check FeynKit import orders
+              env:
+                  SYMBOLICA_LICENSE_KEY: ${{ secrets.SYMBOLICA_LICENSE_KEY }}
+              run: python scripts/check_feynkit_import_orders.py
 
             - name: Run tests
               env:
                   SYMBOLICA_LICENSE_KEY: ${{ secrets.SYMBOLICA_LICENSE_KEY }}
               run: pytest tests/ -v
+
+            - name: Execute FeynKit tutorials
+              env:
+                  SYMBOLICA_LICENSE_KEY: ${{ secrets.SYMBOLICA_LICENSE_KEY }}
+              run: python scripts/run_feynkit_notebooks.py
 
             - name: Run tests with coverage
               if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
@@ -52,7 +118,7 @@ jobs:
 
             - name: Upload coverage to codecov
               if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v5
               with:
                   token: ${{ secrets.CODECOV_TOKEN }}
                   files: ./coverage.xml

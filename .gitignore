@@ -3,6 +3,7 @@ flake.nix
 flake.lock
 /.direnv
 /.venv
+/.venv-feynkit
 /.zed
 /target
 /.vscode
@@ -14,3 +15,6 @@ flake.lock
 devenv*
 uv.lock
 /example_extension/target
+**/.ipynb_checkpoints/
+**/.virtual_documents/
+**/__marimo__/

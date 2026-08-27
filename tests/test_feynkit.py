@@ -1,0 +1,127 @@
+"""End-to-end checks for the installed native FeynKit community module."""
+
+import inspect
+from pathlib import Path
+
+import pytest
+
+MODEL_PATH = (
+    Path(__file__).parents[1] / "examples" / "feynkit" / "data" / "scalars_2p_3p.json"
+)
+
+
+def test_feynkit_and_spenso_share_symbolica():
+    """Both modules exchange expressions through the installed core module."""
+
+    import sys
+
+    from symbolica import Expression
+    from symbolica.community import feynkit, spenso
+
+    assert "symbolica.community.feynkit_native" in sys.modules
+    assert "_gammaloop" not in sys.modules
+    for exported in (
+        feynkit.Model,
+        feynkit.Generator,
+        feynkit.FeynmanDiagram,
+        feynkit.CffGenerator,
+        feynkit.FourMomentum,
+    ):
+        assert exported.__module__ == "symbolica.community.feynkit"
+
+    model = feynkit.Model.from_path(MODEL_PATH)
+    options = feynkit.GenerationOptions(max_vertices=3)
+    options.add_vertex_allow(["V_3_SCALAR_000"])
+    generated = model.generate_diagrams(
+        ["scalar_0"],
+        ["scalar_0", "scalar_0"],
+        options=options,
+    )
+    factor = generated.diagrams[0].overall_factor_expression()
+    tensor = spenso.TensorName("T").to_expression()
+    assert type(factor) is Expression
+    assert type(factor + tensor) is Expression
+
+
+def test_feynkit_owner_api_covers_cff_and_jets():
+    """Physics operations live on the model, diagram, and jet definition."""
+
+    import symbolica.community.feynkit as fk
+    from symbolica import Expression
+
+    model = fk.Model.from_path(MODEL_PATH)
+    options = fk.GenerationOptions(max_vertices=3, allow_self_loops=True)
+    options.add_vertex_allow(["V_3_SCALAR_000"])
+    generated = model.generate_diagrams(
+        ["scalar_0"],
+        [1000, "scalar_0"],
+        loops=(0, 1),
+        options=options,
+    )
+    loop_diagram = next(
+        diagram
+        for diagram in generated.diagrams
+        if diagram.loop_count == 1
+        and all(edge.source != edge.target for edge in diagram.edges)
+    )
+    assert isinstance(loop_diagram.build_cff().to_expression(), Expression)
+
+    clustered = fk.JetDefinition.anti_kt(radius=0.4).cluster(
+        [
+            fk.FourMomentum(10.0, 10.0, 0.0, 0.0),
+            fk.FourMomentum(5.0, 5.0, 0.0, 0.0),
+        ]
+    )
+    assert len(clustered) == 1
+    assert clustered[0].constituent_indices == [0, 1]
+
+    assert model.parameter("lam").value == complex(1.0, 0.0)
+    assert model.coupling("SCALAR_COUPLING").value == complex(0.0, 1.0)
+
+
+def test_owner_workflows_are_native_extension_methods():
+    """The owner-oriented workflows are PyO3 descriptors, not Python wrappers."""
+
+    import symbolica.community.feynkit as fk
+
+    for removed in (
+        "ParticleLike",
+        "LoopOrder",
+        "load_ufo_model",
+        "generate_diagrams",
+        "build_cff",
+        "cluster_jets",
+    ):
+        assert not hasattr(fk, removed)
+
+    for owner, method_name in (
+        (fk.Model, "generate_diagrams"),
+        (fk.FeynmanDiagram, "build_cff"),
+        (fk.JetDefinition, "cluster"),
+        (fk.UfoLoader, "load"),
+    ):
+        method = getattr(owner, method_name)
+        assert inspect.ismethoddescriptor(method)
+        assert method.__objclass__ is owner
+
+    assert inspect.isbuiltin(fk.JetDefinition.anti_kt)
+
+
+def test_model_generation_rejects_ambiguous_configuration():
+    """The model method rejects ambiguous process configuration early."""
+
+    import symbolica.community.feynkit as fk
+
+    model = fk.Model.from_path(MODEL_PATH)
+    with pytest.raises(ValueError, match="kind must be"):
+        model.generate_diagrams(["scalar_0"], ["scalar_0"], kind="rate")
+    with pytest.raises(ValueError, match="loop bounds"):
+        model.generate_diagrams(["scalar_0"], ["scalar_0"], loops=(2, 1))
+    with pytest.raises(TypeError, match="loops must be"):
+        model.generate_diagrams(["scalar_0"], ["scalar_0"], loops=True)
+    with pytest.raises(ValueError, match="final_state_alternatives"):
+        model.generate_diagrams(
+            ["scalar_0"],
+            ["scalar_0"],
+            final_state_alternatives=[["scalar_0"]],
+        )

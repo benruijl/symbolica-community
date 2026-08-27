@@ -13,7 +13,8 @@ description = "Community-enhanced version of Symbolica: a blazing fast computer 
 keywords = ["math", "algebra", "polynomial", "expression", "manipulation"]
 version = "2.2.0"
 readme = "Readme_pypi.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
+dependencies = ["typst>=0.15,<0.16"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Rust",
@@ -29,6 +30,9 @@ python-source = "python"
 homepage = "https://symbolica.io"
 repository = "https://github.com/symbolica-dev/symbolica"
 
+[project.optional-dependencies]
+feynkit-ufo = ["ufo-model-loader>=0.1.6"]
+
 [tool.poetry]
 package-mode = false
 
@@ -39,4 +43,33 @@ cache-keys = [{ file = "pyproject.toml" }, { file = "src/*.rs" }]
 
 
 [dependency-groups]
-dev = ["ipykernel>=6.16.2", "pytest>=7.0.0", "pytest-cov>=4.0.0"]
+dev = [
+    "ipykernel>=6.16.2",
+    "marimo>=0.24.0",
+    "nbclient>=0.10.0",
+    "nbformat>=5.10.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ty>=0.0.75",
+]
+
+[tool.marimo.package_management]
+manager = "uv"
+
+[tool.marimo.completion]
+copilot = false
+
+[tool.marimo.diagnostics]
+enabled = true
+
+[tool.marimo.language_servers.pylsp]
+enabled = false
+
+[tool.marimo.language_servers.basedpyright]
+enabled = false
+
+[tool.marimo.language_servers.ty]
+enabled = true
+
+[tool.marimo.language_servers.pyrefly]
+enabled = false
