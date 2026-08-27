@@ -368,6 +368,7 @@ def _():
     _color_index = S("FeynKit::ColorIndex")
 
     _metric = S("spenso::g")
+    _dot = S("spenso::dot")
     _gamma = S("spenso::gamma")
     _color_f = S("spenso::f")
     _color_t = S("spenso::t")
@@ -452,13 +453,43 @@ def _():
         contracted = simplify_color(contracted)
         return to_dots(simplify_metrics(contracted.expand()))
 
-    return (contract_qcd_numerator,)
+    def project_gluon_self_energy_scalar(
+        expression: Expression,
+    ) -> Expression:
+        """Apply the normalized transverse and color-singlet projector."""
+        _mu = _sink_index(0, 1)
+        _nu = _sink_index(1, 1)
+        _color_a = _color_index(0, 1)
+        _color_b = _color_index(1, 1)
+        _external_momentum = _momentum(0, _minkowski(4))
+        _momentum_squared = _dot(
+            _external_momentum,
+            _external_momentum,
+        )
+        _color_average = _metric(
+            _adjoint(8, _color_a),
+            _adjoint(8, _color_b),
+        ) / 8
+        _transverse_average = (
+            _metric(_minkowski(4, _mu), _minkowski(4, _nu))
+            - _momentum(0, _minkowski(4, _mu))
+            * _momentum(0, _minkowski(4, _nu))
+            / _momentum_squared
+        ) / 3
+
+        projected = simplify_metrics(
+            (expression * _color_average * _transverse_average).expand()
+        )
+        projected = simplify_color(projected)
+        return to_dots(simplify_metrics(projected.expand()))
+
+    return contract_qcd_numerator, project_gluon_self_energy_scalar
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Contract the internal tensor indices
+    ## Project the contracted tensor to a diagnostic scalar
 
     FeynKit keeps the model's UFO tensor heads and gives every propagator
     endpoint a stable `SourceIndex` or `SinkIndex`. Before contraction, the
@@ -473,10 +504,34 @@ def _(mo):
     The actual algebra is then native idenso: metrics sew the propagator
     endpoints, `simplify_gamma` closes the bottom-quark Dirac trace, and
     `simplify_color` contracts the two structure constants or generators.
-    The two external-gluon Lorentz and adjoint-color indices remain free;
-    `to_dots` turns every remaining repeated momentum index into an explicit
-    symmetric `spenso::dot` scalar product.
-    Changing the graph selector reruns the same contraction for that loop.
+    This first stage produces the tensor
+    \(N^{ab}_{\mu\nu}\) with only the two external-gluon index pairs free.
+
+    For a scalar diagnostic at generic off-shell \(p^2\ne0\), the next stage
+    applies the normalized 4D transverse, SU(3) color-singlet projector
+
+    \[
+    \mathcal P^{ab}_{\mu\nu}
+      = \frac{\delta^{ab}}{8}\,
+        \frac{1}{3}\left(g_{\mu\nu}
+          - \frac{p_\mu p_\nu}{p^2}\right),
+      \qquad p=\operatorname{Momentum}(0).
+    \]
+
+    Its normalization is
+    \(1/[(d-1)(N_c^2-1)]=1/(3\cdot8)=1/24\). Native spenso metrics
+    identify and contract the external Lorentz and adjoint slots; idenso then
+    simplifies them and rewrites every momentum contraction as a symmetric
+    `spenso::dot`. The displayed result is therefore a scalar with no
+    `SinkIndex` or `ColorIndex` labels.
+
+    This is a projection of the selected **numerator**, not the unprojected
+    self-energy tensor or a claim that each loop class is separately
+    transverse. Although the gluon field is massless, the standard projector
+    above treats its self-energy momentum as off-shell; it is singular at
+    \(p^2=0\). Individual contributions need not be transverse before the
+    appropriate gauge-sector sum and loop integration. Changing the graph
+    selector reruns both contraction stages for that loop.
     """)
     return
 
@@ -485,6 +540,7 @@ def _(mo):
 def _(
     contract_qcd_numerator,
     mo,
+    project_gluon_self_energy_scalar,
     selected_diagram,
     selected_label,
     table,
@@ -492,26 +548,30 @@ def _(
     contracted_numerator = contract_qcd_numerator(
         selected_diagram.numerator_expression()
     )
+    scalar_projection = project_gluon_self_energy_scalar(
+        contracted_numerator
+    )
 
     table(
         [
             {
                 "contribution": selected_label,
-                "contracted numerator": mo.as_html(
-                    contracted_numerator
+                "normalized projector": mo.md(
+                    r"""\(\frac{\delta^{ab}}{8}\frac{1}{3}
+                    (g_{\mu\nu}-p_\mu p_\nu/p^2)\)"""
                 ),
-                "free tensor structure": (
-                    "two external Lorentz and two external adjoint indices"
-                ),
+                "projected numerator": mo.as_html(scalar_projection),
+                "result": "scalar; no free Lorentz or color indices",
             }
         ],
         column_widths={
             "contribution": 180,
-            "contracted numerator": 760,
-            "free tensor structure": 260,
+            "normalized projector": 350,
+            "projected numerator": 760,
+            "result": 270,
         },
     )
-    return (contracted_numerator,)
+    return contracted_numerator, scalar_projection
 
 
 if __name__ == "__main__":
