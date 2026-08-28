@@ -66,6 +66,52 @@ def test_particle_antiparticle_and_native_particle_inputs():
     assert process.outgoing_alternatives[0][0].pdg == 21
 
 
+def test_generated_ufo_tensors_are_native_spenso_expressions():
+    """Generated SM numerators can enter Idenso without a Python adapter."""
+
+    import symbolica.community.feynkit as fk
+    from symbolica.community.idenso import (
+        simplify_color,
+        simplify_gamma,
+        simplify_metrics,
+        to_dots,
+    )
+
+    model = fk.Model(SM_MODEL_PATH)
+    gluon = model.particle("g")
+    options = fk.GenerationOptions(max_vertices=2)
+    options.set_coupling_orders({"QCD": (2, 2), "QED": (0, 0)})
+    options.add_particle_veto(
+        [
+            particle
+            for name in ("d", "u", "s", "c", "t")
+            for quark in (model.particle(name),)
+            for particle in (quark, quark.antiparticle)
+        ]
+    )
+    generated = model.generate_diagrams(
+        incoming=[gluon],
+        outgoing=[gluon.antiparticle],
+        loops=1,
+        options=options,
+    )
+
+    assert len(generated.diagrams) == 3
+    serialized = "\n".join(
+        repr(diagram.numerator_expression()) for diagram in generated.diagrams
+    )
+    for head in ("Gamma", "Metric", "PSlash", "Identity", "T", "f"):
+        assert f"UFO::{head}(" not in serialized
+    for head in ("gamma", "t", "f", "g"):
+        assert f"spenso::{head}(" in serialized
+
+    for diagram in generated.diagrams:
+        expression = simplify_metrics(diagram.numerator_expression().expand())
+        expression = simplify_gamma(expression)
+        expression = simplify_color(expression)
+        to_dots(simplify_metrics(expression.expand()))
+
+
 def test_feynkit_owner_api_covers_cff_and_jets():
     """Physics operations live on the model, diagram, and jet definition."""
 

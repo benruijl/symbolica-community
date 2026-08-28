@@ -243,6 +243,12 @@ def _(diagrams_by_kind, graph_selector, labels_by_kind, mo):
     return selected_diagram, selected_label
 
 
+@app.cell
+def _(selected_diagram):
+    selected_diagram.build_cff().to_expression()
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
@@ -361,105 +367,16 @@ def _():
         to_dots,
     )
 
-    _a, _b, _c, _edge, _index_edge, _shift = S(
-        "a_", "b_", "c_", "edge_", "index_edge_", "shift_"
-    )
-    _ufo_metric = S("UFO::Metric")
-    _ufo_gamma = S("UFO::Gamma")
-    _ufo_identity = S("UFO::Identity")
-    _ufo_pslash = S("UFO::PSlash")
-    _ufo_f = S("UFO::f")
-    _ufo_t = S("UFO::T")
-
     _momentum = S("FeynKit::Momentum")
-    _source_index = S("FeynKit::SourceIndex")
     _sink_index = S("FeynKit::SinkIndex")
-    _slash_index = S("FeynKit::SlashIndex")
-    _color_label = S("FeynKit::ColorLabel")
-    _color_index = S("FeynKit::ColorIndex")
-
     _metric = S("spenso::g")
     _dot = S("spenso::dot")
-    _gamma = S("spenso::gamma")
-    _color_f = S("spenso::f")
-    _color_t = S("spenso::t")
     _minkowski = S("spenso::mink")
-    _bispinor = S("spenso::bis")
     _adjoint = S("spenso::coad")
-    _fundamental = S("spenso::cof")
-    _dual = S("spenso::dind")
 
     def contract_qcd_numerator(expression: Expression) -> Expression:
         """Contract a FeynKit QCD bubble numerator with spenso/idenso."""
-        converted = expression.replace(
-            _ufo_pslash(_a, _b, _momentum(_edge)),
-            _gamma(
-                _bispinor(4, _a),
-                _bispinor(4, _b),
-                _minkowski(4, _slash_index(_edge)),
-            )
-            * _momentum(_edge, _minkowski(4, _slash_index(_edge))),
-        )
-        converted = converted.replace(
-            _ufo_gamma(_a, _b, _c),
-            _gamma(
-                _bispinor(4, _b),
-                _bispinor(4, _c),
-                _minkowski(4, _a),
-            ),
-        )
-        converted = converted.replace(
-            _ufo_identity(_a, _b),
-            _metric(_bispinor(4, _a), _bispinor(4, _b)),
-        )
-        converted = converted.replace(
-            _ufo_metric(_a, _b),
-            _metric(_minkowski(4, _a), _minkowski(4, _b)),
-        )
-        converted = converted.replace(
-            _ufo_f(_a, _b, _c),
-            _color_f(
-                _adjoint(8, _color_label(_a)),
-                _adjoint(8, _color_label(_b)),
-                _adjoint(8, _color_label(_c)),
-            ),
-        )
-        converted = converted.replace(
-            _ufo_t(_a, _b, _c),
-            _color_t(
-                _adjoint(8, _color_label(_a)),
-                _fundamental(3, _color_label(_b)),
-                _dual(_fundamental(3, _color_label(_c))),
-            ),
-        )
-        converted = converted.replace(
-            _color_label(_source_index(_index_edge, _shift)),
-            _color_index(_index_edge, _shift),
-        )
-        converted = converted.replace(
-            _color_label(_sink_index(_index_edge, _shift)),
-            _color_index(_index_edge, _shift),
-        )
-        converted = converted.replace(
-            _momentum(
-                _edge, _source_index(_index_edge, _shift)
-            ),
-            _momentum(
-                _edge,
-                _minkowski(
-                    4, _source_index(_index_edge, _shift)
-                ),
-            ),
-        )
-        converted = converted.replace(
-            _momentum(_edge, _sink_index(_index_edge, _shift)),
-            _momentum(
-                _edge,
-                _minkowski(4, _sink_index(_index_edge, _shift)),
-            ),
-        )
-
-        contracted = simplify_metrics(converted.expand())
+        contracted = simplify_metrics(expression.expand())
         contracted = simplify_gamma(contracted)
         contracted = simplify_color(contracted)
         return to_dots(simplify_metrics(contracted.expand()))
@@ -470,8 +387,8 @@ def _():
         """Apply the normalized transverse and color-singlet projector."""
         _mu = _sink_index(0, 1)
         _nu = _sink_index(1, 1)
-        _color_a = _color_index(0, 1)
-        _color_b = _color_index(1, 1)
+        _color_a = _sink_index(0, 1)
+        _color_b = _sink_index(1, 1)
         _external_momentum = _momentum(0, _minkowski(4))
         _momentum_squared = _dot(
             _external_momentum,
@@ -502,15 +419,13 @@ def _(mo):
     mo.md(r"""
     ## Project the contracted tensor to a diagnostic scalar
 
-    FeynKit keeps the model's UFO tensor heads and gives every propagator
-    endpoint a stable `SourceIndex` or `SinkIndex`. Before contraction, the
-    symbolic adapter above assigns their physical spenso representations:
-    four-dimensional Minkowski and bispinor slots, plus SU(3) adjoint and
-    fundamental slots. The color labels at both ends of an internal edge are
-    identified because the propagator's color delta is implicit. The adapter
-    also resolves
+    FeynKit lowers the model's UFO tensors while it instantiates each rule.
+    The numerator therefore already contains native four-dimensional
+    Minkowski and bispinor slots, SU(3) adjoint and fundamental slots, and the
+    color metrics that sew internal propagators. It also expands
     \(\not{p}=\gamma^\rho p_\rho\) with one private Lorentz index per
-    propagator.
+    propagator. Stable `SourceIndex` and `SinkIndex` labels record which graph
+    endpoint owns every slot.
 
     The actual algebra is then native idenso: metrics sew the propagator
     endpoints, `simplify_gamma` closes the bottom-quark Dirac trace, and
@@ -533,8 +448,8 @@ def _(mo):
     \(1/[(d-1)(N_c^2-1)]=1/(3\cdot8)=1/24\). Native spenso metrics
     identify and contract the external Lorentz and adjoint slots; idenso then
     simplifies them and rewrites every momentum contraction as a symmetric
-    `spenso::dot`. The displayed result is therefore a scalar with no
-    `SinkIndex` or `ColorIndex` labels.
+    `spenso::dot`. The displayed result is therefore a scalar with no free
+    endpoint indices.
 
     This is a projection of the selected **numerator**, not the unprojected
     self-energy tensor or a claim that each loop class is separately
@@ -582,8 +497,7 @@ def _(
             "result": 270,
         },
     )
-    return contracted_numerator, scalar_projection
-
+    return
 
 if __name__ == "__main__":
     app.run()
