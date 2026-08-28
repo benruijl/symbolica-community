@@ -14,7 +14,12 @@ def _():
     import symbolica.community.feynkit as fk
     from symbolica import S
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     data_file = Path(__file__).resolve().parent / "data" / "scalars_2p_3p.json"
     return S, data_file, fk, math, mo, table
 
@@ -64,7 +69,7 @@ def _(data_file, fk, mo, table):
         for item in _generated.diagrams
         if all(edge.source != edge.target for edge in item.edges)
     )
-    diagram.validate(model)
+    diagram.validate()
     basis = diagram.loop_momentum_bases(limit=1)[0]
 
     table(
@@ -177,10 +182,14 @@ def _(S, diagram, mo, model, table):
     numerator_value = diagram_numerator.evaluate(_rule_point)
     overall_value = _overall_factor.evaluate(
         {
-            S("feynkit_py::AutG")(diagram.symmetry_factor): float(
+            S("feynkit_generator_factor::AutG")(
+                diagram.symmetry_factor
+            ): float(
                 diagram.symmetry_factor
             ),
-            S("feynkit_py::ExternalFermionOrderingSign")(1): 1.0,
+            S("feynkit_generator_factor::ExternalFermionOrderingSign")(
+                1
+            ): 1.0,
         }
     )
     mo.vstack(

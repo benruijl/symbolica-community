@@ -10,7 +10,12 @@ def _():
 
     import marimo as mo
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     return mo, table
 
 

@@ -46,6 +46,40 @@ def _is_marimo_cell(function):
     )
 
 
+def _flattened_rich_outputs(source: str) -> list[str]:
+    """Find tutorial code that bypasses native rich representations."""
+
+    tree = ast.parse(source)
+    flattened = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "format_plain"
+        ):
+            flattened.append("format_plain")
+            continue
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in {"str", "repr"}
+            and node.args
+        ):
+            continue
+        names = {
+            child.id.lower()
+            for child in ast.walk(node.args[0])
+            if isinstance(child, ast.Name)
+        }
+        if any(
+            token in name
+            for name in names
+            for token in ("diagram", "expression", "numerator", "factor")
+        ):
+            flattened.append(node.func.id)
+    return flattened
+
+
 @pytest.mark.parametrize("notebook_path", NOTEBOOKS, ids=lambda path: path.stem)
 def test_feynkit_tutorial(notebook_path):
     """Tutorials use a generic kernel and do not commit transient output."""
@@ -76,6 +110,16 @@ def test_jupyter_tutorial_helpers_are_fully_typed(notebook_path):
                 assert not _missing_annotations(node), node.name
 
 
+@pytest.mark.parametrize("notebook_path", NOTEBOOKS, ids=lambda path: path.stem)
+def test_jupyter_tutorials_preserve_rich_physics_objects(notebook_path):
+    """Expressions and diagrams reach the frontend without string coercion."""
+
+    notebook = nbformat.read(notebook_path, as_version=4)
+    for cell in notebook.cells:
+        if cell.cell_type == "code":
+            assert not _flattened_rich_outputs(cell.source)
+
+
 def test_every_jupyter_tutorial_has_a_native_marimo_port():
     """Keep the two tutorial formats paired by a predictable basename."""
 
@@ -93,10 +137,11 @@ def test_feynkit_marimo_app_is_native_and_portable(app_path):
         f'app = marimo.App(width="{width}")' in source
         for width in ("medium", "full")
     )
-    assert "table = partial(mo.ui.table, selection=None)" in source
+    assert "table = partial(" in source
     assert source.count("mo.ui.table") == 1
-    assert "pagination=False" not in source
-    assert "show_download=False" not in source
+    assert "pagination=False" in source
+    assert "selection=None" in source
+    assert "show_download=False" in source
     assert "@app.cell" in source
     assert 'if __name__ == "__main__":' in source
     assert "get_ipython" not in source
@@ -113,3 +158,10 @@ def test_marimo_tutorial_helpers_are_fully_typed(app_path):
             node
         ):
             assert not _missing_annotations(node), node.name
+
+
+@pytest.mark.parametrize("app_path", MARIMO_APPS, ids=lambda path: path.stem)
+def test_marimo_tutorials_preserve_rich_physics_objects(app_path):
+    """Expressions and diagrams reach Marimo without string coercion."""
+
+    assert not _flattened_rich_outputs(app_path.read_text())

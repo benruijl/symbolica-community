@@ -10,7 +10,12 @@ def _():
 
     import marimo as mo
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     return mo, table
 
 
@@ -105,35 +110,36 @@ def _(fk, mo, model, table):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Processes and inclusive loop ranges
+    ## Model-owned generation and inclusive loop ranges
 
-    `Process.amplitude` and `Process.cross_section` make the requested graph
-    semantics explicit. Cross-section generation constructs cross-section
-    graph structures; it does not numerically integrate phase space. Loop
-    bounds are inclusive.
+    `Model.generate_diagrams` is the main entry point. External states may use
+    `Particle` objects directly, avoiding a second lookup or a hand-written PDG
+    code. Set `kind="cross_section"` to construct cross-section graph
+    structures; this does not numerically integrate phase space. Loop bounds
+    are inclusive.
     """)
     return
 
 
 @app.cell
-def _(fk, mo, table):
-    _process = fk.Process.amplitude(
-        ["scalar_0"], [1000, "scalar_0"]
-    ).with_loop_count(0, 1)
+def _(model, table):
+    incoming_particles = [model.particle("scalar_0")]
+    outgoing_particles = [
+        model.particle_by_pdg(1000),
+        incoming_particles[0].antiparticle,
+    ]
 
     table(
         [
             {
-                "kind": str(_process.generation_type),
-                "incoming": ", ".join(str(item) for item in _process.incoming),
-                "outgoing": ", ".join(
-                    str(item) for item in _process.outgoing_alternatives[0]
-                ),
-                "loops": str(_process.loop_count),
+                "kind": "amplitude",
+                "incoming": ", ".join(particle.name for particle in incoming_particles),
+                "outgoing": ", ".join(particle.name for particle in outgoing_particles),
+                "loop orders": "0 and 1",
             }
         ]
     )
-    return
+    return incoming_particles, outgoing_particles
 
 
 @app.cell(hide_code=True)
@@ -147,13 +153,13 @@ def _(mo):
 
 
 @app.cell
-def _(fk, mo, model, table):
+def _(fk, incoming_particles, model, outgoing_particles, table):
     _options = fk.GenerationOptions(max_vertices=3, allow_self_loops=True)
     _options.add_vertex_allow(["V_3_SCALAR_000"])
 
     generated = model.generate_diagrams(
-        incoming=["scalar_0"],
-        outgoing=[1000, "scalar_0"],
+        incoming=incoming_particles,
+        outgoing=outgoing_particles,
         loops=(0, 1),
         options=_options,
     )
@@ -180,8 +186,8 @@ def _(mo):
     ## Graph interchange and validation
 
     Diagrams round-trip through JSON for lossless storage and through DOT for
-    graph-tool interoperability. Validate imported diagrams against the model
-    before using them downstream.
+    graph-tool interoperability. Deserialization requires the canonical model,
+    verifies its fingerprint, and restores a self-contained diagram.
     """)
     return
 
@@ -195,10 +201,10 @@ def _(fk, generated, mo, model, table):
         and all(edge.source != edge.target for edge in diagram.edges)
     )
 
-    from_json = fk.FeynmanDiagram.from_json(_loop_diagram.to_json())
-    _from_dot = fk.FeynmanDiagram.from_dot(_loop_diagram.to_dot())
-    from_json.validate(model)
-    _from_dot.validate(model)
+    from_json = fk.FeynmanDiagram.from_json(model, _loop_diagram.to_json())
+    _from_dot = fk.FeynmanDiagram.from_dot(model, _loop_diagram.to_dot())
+    from_json.validate()
+    _from_dot.validate()
 
     table(
         [

@@ -10,7 +10,12 @@ def _():
 
     import marimo as mo
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     return mo, table
 
 
@@ -133,13 +138,13 @@ def _(mo):
 
 
 @app.cell
-def _(generated, mo, model, table):
+def _(generated, mo, table):
     diagram = next(
         item
         for item in generated.diagrams
         if all(edge.source != edge.target for edge in item.edges)
     )
-    diagram.validate(model)
+    diagram.validate()
     _factor = diagram.overall_factor_expression()
 
     table(

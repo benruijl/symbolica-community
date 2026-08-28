@@ -10,7 +10,12 @@ def _():
 
     import marimo as mo
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     return mo, table
 
 
@@ -56,7 +61,7 @@ def _(fk, mo, model, table):
         if item.loop_count == 1
         and all(edge.source != edge.target for edge in item.edges)
     )
-    diagram.validate(model)
+    diagram.validate()
     table(
         [
             {

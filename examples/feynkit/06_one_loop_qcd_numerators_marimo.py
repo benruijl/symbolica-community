@@ -10,7 +10,12 @@ def _():
 
     import marimo as mo
 
-    table = partial(mo.ui.table, selection=None)
+    table = partial(
+        mo.ui.table,
+        pagination=False,
+        selection=None,
+        show_download=False,
+    )
     return mo, table
 
 
@@ -241,12 +246,6 @@ def _(diagrams_by_kind, graph_selector, labels_by_kind, mo):
         gap=1,
     )
     return selected_diagram, selected_label
-
-
-@app.cell
-def _(selected_diagram):
-    selected_diagram.build_cff().to_expression()
-    return
 
 
 @app.cell(hide_code=True)
@@ -498,6 +497,7 @@ def _(
         },
     )
     return
+
 
 if __name__ == "__main__":
     app.run()
