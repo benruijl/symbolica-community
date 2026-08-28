@@ -8,6 +8,7 @@ import pytest
 MODEL_PATH = (
     Path(__file__).parents[1] / "examples" / "feynkit" / "data" / "scalars_2p_3p.json"
 )
+SM_MODEL_PATH = MODEL_PATH.with_name("sm.json")
 
 
 def test_feynkit_and_spenso_share_symbolica():
@@ -29,12 +30,14 @@ def test_feynkit_and_spenso_share_symbolica():
     ):
         assert exported.__module__ == "symbolica.community.feynkit"
 
-    model = feynkit.Model.from_path(MODEL_PATH)
+    model = feynkit.Model(MODEL_PATH)
+    scalar = model.particle("scalar_0")
     options = feynkit.GenerationOptions(max_vertices=3)
     options.add_vertex_allow(["V_3_SCALAR_000"])
+    options.add_particle_veto([model.particle("scalar_1"), 1002])
     generated = model.generate_diagrams(
-        ["scalar_0"],
-        ["scalar_0", "scalar_0"],
+        [scalar],
+        [scalar, scalar.antiparticle],
         options=options,
     )
     factor = generated.diagrams[0].overall_factor_expression()
@@ -43,13 +46,33 @@ def test_feynkit_and_spenso_share_symbolica():
     assert type(factor + tensor) is Expression
 
 
+def test_particle_antiparticle_and_native_particle_inputs():
+    """Particles retain their model relation and normalize in process inputs."""
+
+    import symbolica.community.feynkit as fk
+
+    assert not hasattr(fk.Model, "from_path")
+
+    model = fk.Model(SM_MODEL_PATH)
+    bottom = model.particle("b")
+    assert isinstance(bottom.antiparticle, fk.Particle)
+    assert (bottom.antiparticle.name, bottom.antiparticle.pdg_code) == ("b~", -5)
+    assert bottom.antiparticle.antiparticle.name == bottom.name
+
+    gluon = model.particle("g")
+    assert gluon.antiparticle.name == gluon.name
+    process = fk.Process.amplitude([gluon], [gluon.antiparticle])
+    assert process.incoming[0].pdg == 21
+    assert process.outgoing_alternatives[0][0].pdg == 21
+
+
 def test_feynkit_owner_api_covers_cff_and_jets():
     """Physics operations live on the model, diagram, and jet definition."""
 
     import symbolica.community.feynkit as fk
     from symbolica import Expression
 
-    model = fk.Model.from_path(MODEL_PATH)
+    model = fk.Model(MODEL_PATH)
     options = fk.GenerationOptions(max_vertices=3, allow_self_loops=True)
     options.add_vertex_allow(["V_3_SCALAR_000"])
     generated = model.generate_diagrams(
@@ -112,7 +135,7 @@ def test_model_generation_rejects_ambiguous_configuration():
 
     import symbolica.community.feynkit as fk
 
-    model = fk.Model.from_path(MODEL_PATH)
+    model = fk.Model(MODEL_PATH)
     with pytest.raises(ValueError, match="kind must be"):
         model.generate_diagrams(["scalar_0"], ["scalar_0"], kind="rate")
     with pytest.raises(ValueError, match="loop bounds"):

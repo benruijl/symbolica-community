@@ -64,7 +64,7 @@ def _(mo):
 
 @app.cell
 def _(data_dir, fk, mo, table):
-    model = fk.Model.from_path(data_dir / "scalars_2p_3p.json")
+    model = fk.Model(data_dir / "scalars_2p_3p.json")
 
     table(
         [

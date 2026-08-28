@@ -49,12 +49,15 @@ for removed in (
 ):
     assert not hasattr(feynkit, removed)
 
-model = feynkit.Model.from_path({str(MODEL_PATH)!r})
+model = feynkit.Model({str(MODEL_PATH)!r})
+scalar = model.particle("scalar_0")
+assert scalar.antiparticle.name == scalar.name
 options = feynkit.GenerationOptions(max_vertices=3)
 options.add_vertex_allow(["V_3_SCALAR_000"])
+options.add_particle_veto([model.particle("scalar_1"), 1002])
 generated = model.generate_diagrams(
-    ["scalar_0"],
-    ["scalar_0", "scalar_0"],
+    [scalar],
+    [scalar, scalar.antiparticle],
     options=options,
 )
 factor = generated.diagrams[0].overall_factor_expression()

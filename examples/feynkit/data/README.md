@@ -7,7 +7,7 @@ external UFO model or Python UFO loader.
 
 `sm.json` is a byte-for-byte copy of
 `assets/models/json/sm/sm.json` from GammaLoop's FeynKit branch at revision
-`1452e93b3fe3e14554653680bda64032f435bb0f`. Its SHA-256 digest is
+`e5b75ffb06844c3228d607032423bc3ffaf71573`. Its SHA-256 digest is
 `8ba8e7f6f6271e47ee9ba8a41b2a090b6183924af03226a21d96c0846815d3b1`.
 The one-loop QCD numerator tutorial uses this authoritative normalized Standard
 Model fixture without requiring the optional UFO loader.

@@ -35,7 +35,7 @@ def _():
     import symbolica.community.feynkit as fk
 
     _data_file = Path(__file__).resolve().parent / "data" / "scalars_2p_3p.json"
-    model = fk.Model.from_path(_data_file)
+    model = fk.Model(_data_file)
     return S, fk, model
 
 

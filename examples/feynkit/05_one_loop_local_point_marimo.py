@@ -49,7 +49,7 @@ def _(mo):
 
 @app.cell
 def _(data_file, fk, mo, table):
-    model = fk.Model.from_path(data_file)
+    model = fk.Model(data_file)
     _options = fk.GenerationOptions(max_vertices=3, allow_self_loops=True)
     _options.add_vertex_allow(["V_3_SCALAR_000"])
     _generated = model.generate_diagrams(

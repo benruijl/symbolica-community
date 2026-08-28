@@ -35,7 +35,7 @@ python_stubgen = [
 
 [dependencies]
 example_extension = { path = "example_extension" }
-feynkit-py = { git = "https://github.com/alphal00p/gammaloop", rev = "1452e93b3fe3e14554653680bda64032f435bb0f" }
+feynkit-py = { git = "https://github.com/alphal00p/gammaloop", rev = "e5b75ffb06844c3228d607032423bc3ffaf71573" }
 idenso = { version = "0.3", features = ["bincode", "python"] }
 symbolica = { version = "2.2", features = ["python_export"] }
 symbolica-integrate = { version = "1.0", features = ["steps"] }

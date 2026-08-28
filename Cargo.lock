@@ -657,7 +657,7 @@ dependencies = [
 [[package]]
 name = "feynkit-cff"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "feynkit-graph",
  "serde",
@@ -667,11 +667,11 @@ dependencies = [
 [[package]]
 name = "feynkit-generator"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "feynkit-graph",
  "feynkit-model",
- "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f)",
+ "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573)",
  "rayon",
  "serde",
  "symbolica",
@@ -681,11 +681,11 @@ dependencies = [
 [[package]]
 name = "feynkit-graph"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "feynkit-kinematics",
  "feynkit-model",
- "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f)",
+ "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573)",
  "serde",
  "serde_json",
  "symbolica",
@@ -695,9 +695,9 @@ dependencies = [
 [[package]]
 name = "feynkit-kinematics"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
- "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f)",
+ "linnet 0.17.0 (git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573)",
  "numerica",
  "serde",
  "thiserror",
@@ -706,7 +706,7 @@ dependencies = [
 [[package]]
 name = "feynkit-model"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "serde",
  "serde_json",
@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "feynkit-py"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "feynkit-cff",
  "feynkit-generator",
@@ -736,7 +736,7 @@ dependencies = [
 [[package]]
 name = "feynkit-ufo"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "feynkit-model",
  "pyo3",
@@ -1151,7 +1151,7 @@ dependencies = [
 [[package]]
 name = "linnet"
 version = "0.17.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "ahash",
  "bincode-trait-derive",
@@ -2399,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "symbolica-utils"
 version = "0.1.0"
-source = "git+https://github.com/alphal00p/gammaloop?rev=1452e93b3fe3e14554653680bda64032f435bb0f#1452e93b3fe3e14554653680bda64032f435bb0f"
+source = "git+https://github.com/alphal00p/gammaloop?rev=e5b75ffb06844c3228d607032423bc3ffaf71573#e5b75ffb06844c3228d607032423bc3ffaf71573"
 dependencies = [
  "bincode",
  "bincode-trait-derive",

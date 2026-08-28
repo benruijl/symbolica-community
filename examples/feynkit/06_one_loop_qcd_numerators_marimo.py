@@ -55,7 +55,7 @@ def _(mo):
 
 @app.cell
 def _(data_dir, fk, table):
-    model = fk.Model.from_path(data_dir / "sm.json")
+    model = fk.Model(data_dir / "sm.json")
     gluon = model.particle("g")
 
     table(
@@ -65,11 +65,12 @@ def _(data_dir, fk, table):
                 "particles": len(model.particles),
                 "interaction rules": len(model.vertex_rules),
                 "gluon PDG": gluon.pdg_code,
+                "gluon antiparticle": gluon.antiparticle.name,
                 "gluon massless": gluon.is_massless,
             }
         ],
     )
-    return (model,)
+    return gluon, model
 
 
 @app.cell(hide_code=True)
@@ -79,10 +80,11 @@ def _(mo):
 
     `loops=1` fixes the loop order, while the coupling-order bounds select
     exactly \(g_s^2\) and exclude electroweak insertions. `add_particle_veto`
-    removes the other five quark flavors before graph generation; both signs
-    of each PDG code are listed so the restriction covers particles and
-    antiparticles. Self-loops stay disabled, excluding the massless
-    four-gluon tadpole, which is scaleless and vanishes in dimensional
+    removes the other five quark flavors before graph generation. We look up
+    each quark as a concrete `Particle` and obtain its partner through
+    `particle.antiparticle`; the generator likewise accepts the concrete gluon
+    objects as its external states. Self-loops stay disabled, excluding the
+    massless four-gluon tadpole, which is scaleless and vanishes in dimensional
     regularization.
 
     FeynKit automatically instantiates each vertex and propagator rule while
@@ -92,14 +94,23 @@ def _(mo):
 
 
 @app.cell
-def _(fk, model, table):
+def _(fk, gluon, model, table):
     options = fk.GenerationOptions(max_vertices=2)
     options.set_coupling_orders({"QCD": (2, 2), "QED": (0, 0)})
-    options.add_particle_veto([1, -1, 2, -2, 3, -3, 4, -4, 6, -6])
+    _quarks_to_veto = [
+        model.particle(_name) for _name in ("d", "u", "s", "c", "t")
+    ]
+    options.add_particle_veto(
+        [
+            _particle
+            for _quark in _quarks_to_veto
+            for _particle in (_quark, _quark.antiparticle)
+        ]
+    )
 
     generated = model.generate_diagrams(
-        incoming=["g"],
-        outgoing=["g"],
+        incoming=[gluon],
+        outgoing=[gluon.antiparticle],
         loops=1,
         options=options,
     )
