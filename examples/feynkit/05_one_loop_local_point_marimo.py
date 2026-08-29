@@ -138,12 +138,14 @@ def _(mo):
     ## Inspect native Feynman-rule expressions
 
     Internal vertices and propagator edges expose their numerator annotations
-    as native Symbolica `Expression` objects. For this scalar model, each
-    vertex contributes \(i\lambda\), every propagator numerator is one, and
-    the diagram numerator is their product, \(-i\lambda^3\). The graph-wide
-    factor deliberately keeps `AutG` and the external-fermion ordering sign as
-    symbolic atoms; both evaluate to one for this scalar graph, and the code
-    supplies those values explicitly.
+    as native Symbolica `Expression` objects. Generated rules retain named
+    model couplings; `model.expand_couplings(...)` turns those names into their
+    analytic parameter expressions before the small numerical substitution
+    below. For this scalar model, each vertex contributes \(i\lambda\), every
+    propagator numerator is one, and the diagram numerator is their product,
+    \(-i\lambda^3\). The graph-wide factor deliberately keeps `AutG` and the
+    external-fermion ordering sign as symbolic atoms; both evaluate to one for
+    this scalar graph, and the code supplies those values explicitly.
     """)
     return
 
@@ -154,7 +156,7 @@ def _(S, diagram, mo, model, table):
     _rule_point = {S("UFO::lam"): _lam_value}
     _rule_rows = []
     for _vertex in (item for item in diagram.vertices if not item.is_external):
-        _rule_expression = _vertex.numerator_expression()
+        _rule_expression = model.expand_couplings(_vertex.numerator_expression())
         _model_rule = model.vertex_rule(_vertex.interaction)
         _rule_rows.append(
             {
@@ -166,7 +168,7 @@ def _(S, diagram, mo, model, table):
             }
         )
     for _edge in diagram.edges:
-        _rule_expression = _edge.numerator_expression()
+        _rule_expression = model.expand_couplings(_edge.numerator_expression())
         _rule_rows.append(
             {
                 "object": f"edge {_edge.id}",
@@ -177,19 +179,15 @@ def _(S, diagram, mo, model, table):
             }
         )
 
-    diagram_numerator = diagram.numerator_expression()
+    diagram_numerator = model.expand_couplings(diagram.numerator_expression())
     _overall_factor = diagram.overall_factor_expression()
     numerator_value = diagram_numerator.evaluate(_rule_point)
     overall_value = _overall_factor.evaluate(
         {
-            S("feynkit_generator_factor::AutG")(
-                diagram.symmetry_factor
-            ): float(
+            S("feynkit_generator_factor::AutG")(diagram.symmetry_factor): float(
                 diagram.symmetry_factor
             ),
-            S("feynkit_generator_factor::ExternalFermionOrderingSign")(
-                1
-            ): 1.0,
+            S("feynkit_generator_factor::ExternalFermionOrderingSign")(1): 1.0,
         }
     )
     mo.vstack(
@@ -201,9 +199,7 @@ def _(S, diagram, mo, model, table):
             table(
                 [
                     {
-                        "diagram numerator": mo.as_html(
-                            diagram_numerator.formatted()
-                        ),
+                        "diagram numerator": mo.as_html(diagram_numerator.formatted()),
                         "numerator value": numerator_value,
                         "overall factor": mo.as_html(_overall_factor.formatted()),
                         "factor value": overall_value,
@@ -293,8 +289,7 @@ def _(fk, mo, table):
 @app.cell
 def _(basis, external_momenta, loop_points, math, mo, table):
     _external_spatial = [
-        (momentum.px, momentum.py, momentum.pz)
-        for momentum in external_momenta
+        (momentum.px, momentum.py, momentum.pz) for momentum in external_momenta
     ]
     _loop_spatial_by_point = {
         point: [(momentum.px, momentum.py, momentum.pz)]
@@ -308,9 +303,7 @@ def _(basis, external_momenta, loop_points, math, mo, table):
             _routed_spatial[_edge_id] = tuple(
                 sum(
                     coefficient * vector[axis]
-                    for coefficient, vector in zip(
-                        _signature.loops, _loop_spatial
-                    )
+                    for coefficient, vector in zip(_signature.loops, _loop_spatial)
                 )
                 + sum(
                     coefficient * vector[axis]
@@ -390,15 +383,19 @@ def _(
     _surface_symbol_values = {}
     _surface_rows = []
     for _surface in cff.surfaces:
-        _value = sum(
-            on_shell_energy_by_point["A"][edge]
-            for edge in _surface.positive_energies
-        ) - sum(
-            on_shell_energy_by_point["A"][edge]
-            for edge in _surface.negative_energies
-        ) + sum(
-            coefficient * external_energy_by_edge[edge]
-            for edge, coefficient in _surface.external_shift
+        _value = (
+            sum(
+                on_shell_energy_by_point["A"][edge]
+                for edge in _surface.positive_energies
+            )
+            - sum(
+                on_shell_energy_by_point["A"][edge]
+                for edge in _surface.negative_energies
+            )
+            + sum(
+                coefficient * external_energy_by_edge[edge]
+                for edge, coefficient in _surface.external_shift
+            )
         )
         _surface_symbol_values[S(_surface.symbol_name)] = _value
         _surface_rows.append(
@@ -417,13 +414,13 @@ def _(
     for _point, _on_shell_energies in on_shell_energy_by_point.items():
         _symbol_values = {}
         for _surface in cff.surfaces:
-            _symbol_values[S(_surface.symbol_name)] = sum(
-                _on_shell_energies[edge] for edge in _surface.positive_energies
-            ) - sum(
-                _on_shell_energies[edge] for edge in _surface.negative_energies
-            ) + sum(
-                coefficient * external_energy_by_edge[edge]
-                for edge, coefficient in _surface.external_shift
+            _symbol_values[S(_surface.symbol_name)] = (
+                sum(_on_shell_energies[edge] for edge in _surface.positive_energies)
+                - sum(_on_shell_energies[edge] for edge in _surface.negative_energies)
+                + sum(
+                    coefficient * external_energy_by_edge[edge]
+                    for edge, coefficient in _surface.external_shift
+                )
             )
         _cff_values[_point] = cff_expression.evaluate(_symbol_values)
         _point_rows.append(
@@ -432,9 +429,7 @@ def _(
                 "loop momentum": tuple(
                     round(component, 6)
                     for component in (
-                        (1.0, 2.0, 3.0)
-                        if _point == "A"
-                        else (-2.0, 1.0, 2.0)
+                        (1.0, 2.0, 3.0) if _point == "A" else (-2.0, 1.0, 2.0)
                     )
                 ),
                 "CFF value": _cff_values[_point],
@@ -448,9 +443,7 @@ def _(
             table(
                 [
                     {
-                        "diagram numerator": mo.as_html(
-                            diagram_numerator.formatted()
-                        ),
+                        "diagram numerator": mo.as_html(diagram_numerator.formatted()),
                         "numerator value": numerator_value,
                         "overall factor value": overall_value,
                         "CFF expression": mo.as_html(cff_expression.formatted()),

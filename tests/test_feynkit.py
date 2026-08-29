@@ -100,13 +100,17 @@ def test_generated_ufo_tensors_are_native_spenso_expressions():
     serialized = "\n".join(
         repr(diagram.numerator_expression()) for diagram in generated.diagrams
     )
+    assert "UFO::GC_" in serialized
     for head in ("Gamma", "Metric", "PSlash", "Identity", "T", "f"):
         assert f"UFO::{head}(" not in serialized
     for head in ("gamma", "t", "f", "g"):
         assert f"spenso::{head}(" in serialized
 
     for diagram in generated.diagrams:
-        expression = simplify_metrics(diagram.numerator_expression().expand())
+        expression = model.expand_couplings(diagram.numerator_expression())
+        assert "UFO::GC_" not in repr(expression)
+        assert "UFO::G" in repr(expression)
+        expression = simplify_metrics(expression.expand())
         expression = simplify_gamma(expression)
         expression = simplify_color(expression)
         to_dots(simplify_metrics(expression.expand()))
@@ -165,6 +169,7 @@ def test_owner_workflows_are_native_extension_methods():
 
     for owner, method_name in (
         (fk.Model, "generate_diagrams"),
+        (fk.Model, "expand_couplings"),
         (fk.FeynmanDiagram, "build_cff"),
         (fk.JetDefinition, "cluster"),
         (fk.UfoLoader, "load"),

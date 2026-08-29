@@ -49,8 +49,8 @@ assert p.mass_squared == 144.0
 ```
 
 The focused [FeynKit tutorials](examples/feynkit/) cover models, diagram
-generation, CFF expressions, kinematics, and jet clustering in both Jupyter
-and native Marimo formats.
+generation, CFF expressions, kinematics, jet clustering, QCD numerators, and
+high-rank tensor reduction in both Jupyter and native Marimo formats.
 
 #### Installation 
 

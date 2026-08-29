@@ -32,6 +32,10 @@ working order. Every tutorial is available both as a Jupyter notebook
    — gluon, ghost, and bottom-quark contributions to the one-loop gluon
    self-energy, with reactively selected native Symbolica numerators and
    spenso/idenso contractions of their Lorentz, Dirac, and SU(3) indices.
+8. [`07_tensor_reduction.ipynb`](07_tensor_reduction.ipynb) /
+   [`07_tensor_reduction_marimo.py`](07_tensor_reduction_marimo.py) —
+   symmetry-aware Lorentz tensor reduction for vacuum graphs, from the basic
+   rank-two projector through compact rank-six and rank-twenty examples.
 
 ## Marimo
 
@@ -125,8 +129,8 @@ normalized model and loader diagnostics. It deliberately selects only the
 two- and three-point interactions so the result is quick and deterministic.
 
 The general `python scripts/run_feynkit_notebooks.py` command reports this
-optional tutorial as skipped, keeping the six core tutorials compatible with
+optional tutorial as skipped, keeping the seven core tutorials compatible with
 Python 3.10 and a base `symbolica` install. After installing the UFO extra on
-Python 3.11 or newer, use `--include-optional` to execute all seven. Use
+Python 3.11 or newer, use `--include-optional` to execute all eight. Use
 `python scripts/check_feynkit_ufo.py --api-only` when notebook packages are not
 installed and only the loader smoke check is needed.

@@ -103,7 +103,7 @@ The PyPi version of Symbolica ships with the following community packages:
 - [spenso](https://github.com/alphal00p/spenso): perform tensor network computations
 - [idenso](https://github.com/alphal00p/spenso): perform Dirac and color algebra
 - [vakint](https://github.com/alphal00p/vakint): compute massive vacuum bubbles
-- [FeynKit](https://github.com/alphal00p/gammaloop): particle-physics models, Feynman diagrams, Cross-Free Families, relativistic kinematics, and jet clustering
+- [FeynKit](https://github.com/alphal00p/gammaloop): particle-physics models, Feynman diagrams, Cross-Free Families, QCD numerator algebra, high-rank tensor reduction, relativistic kinematics, and jet clustering
 
 They can be accessed through:
 
@@ -118,6 +118,11 @@ import symbolica.community.feynkit as fk
 
 p = fk.ThreeMomentum(3.0, 4.0, 0.0).on_shell(mass=12.0)
 ```
+
+The focused [FeynKit tutorials](examples/feynkit/) cover normalized and UFO
+models, one-loop diagram generation, analytic numerators, CFF construction,
+kinematics, jet clustering, and symmetry-aware tensor reduction through rank
+20 in both Jupyter and native Marimo formats.
 
 Loading raw UFO model directories is optional and requires Python 3.11 or
 newer: `pip install "symbolica[feynkit-ufo]"`. Normalized JSON models, diagram

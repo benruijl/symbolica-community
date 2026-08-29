@@ -102,9 +102,7 @@ def _(mo):
 def _(fk, gluon, model, table):
     options = fk.GenerationOptions(max_vertices=2)
     options.set_coupling_orders({"QCD": (2, 2), "QED": (0, 0)})
-    _quarks_to_veto = [
-        model.particle(_name) for _name in ("d", "u", "s", "c", "t")
-    ]
+    _quarks_to_veto = [model.particle(_name) for _name in ("d", "u", "s", "c", "t")]
     options.add_particle_veto(
         [
             _particle
@@ -186,12 +184,9 @@ def _(generated, internal_edges, mo, table):
         )
 
     diagrams_by_kind = {
-        _kind: _diagram_by_pdg[_pdg]
-        for _kind, _, _pdg, _ in graph_catalog
+        _kind: _diagram_by_pdg[_pdg] for _kind, _, _pdg, _ in graph_catalog
     }
-    labels_by_kind = {
-        _kind: _label for _kind, _label, _, _ in graph_catalog
-    }
+    labels_by_kind = {_kind: _label for _kind, _label, _, _ in graph_catalog}
 
     table(
         [
@@ -254,18 +249,22 @@ def _(mo):
     ## Instantiated numerator
 
     The combined numerator is the native Symbolica product of the selected
-    graph's interaction and internal-propagator factors. The diagram-wide
-    factor contains its automorphism factor, external-fermion ordering sign,
-    and the minus sign for each closed internal fermion loop.
+    graph's interaction and internal-propagator factors. FeynKit stores each
+    UFO vertex coefficient under its model name, such as `GC_10`, so numerical
+    calculations can reuse the precomputed coupling value. Here
+    `model.expand_couplings(...)` replaces those names by their analytic
+    expressions in Lagrangian parameters before display. The diagram-wide factor
+    contains its automorphism factor, external-fermion ordering sign, and the
+    minus sign for each closed internal fermion loop.
     Multiplying the two gives the numerator with this combinatorial factor
-    included.
+    included; the stored diagram itself remains unchanged.
     """)
     return
 
 
 @app.cell
-def _(mo, selected_diagram, selected_label, table):
-    selected_numerator = selected_diagram.numerator_expression()
+def _(mo, model, selected_diagram, selected_label, table):
+    selected_numerator = model.expand_couplings(selected_diagram.numerator_expression())
     selected_factor = selected_diagram.overall_factor_expression()
     weighted_numerator = selected_factor * selected_numerator
 
@@ -301,12 +300,14 @@ def _(mo):
 
 
 @app.cell
-def _(internal_edges, mo, selected_diagram, table):
+def _(internal_edges, mo, model, selected_diagram, table):
     _vertex_rows = [
         {
             "vertex": vertex.id,
             "interaction rule": vertex.interaction,
-            "analytic factor": mo.as_html(vertex.numerator_expression()),
+            "analytic factor": mo.as_html(
+                model.expand_couplings(vertex.numerator_expression())
+            ),
         }
         for vertex in selected_diagram.vertices
         if not vertex.is_external
@@ -349,7 +350,10 @@ def _(mo):
 
     The returned values are ordinary `symbolica.Expression` objects, so they
     can be substituted, expanded, factored, differentiated, or passed directly
-    into the rest of a Symbolica calculation. Multiplying by
+    into the rest of a Symbolica calculation. The displayed interaction
+    coefficients have been expanded to their defining model parameters, while
+    `selected_diagram.numerator_expression()` remains the named-coupling form
+    used by numerical consumers. Multiplying by
     `selected_diagram.overall_factor_expression()` supplies the diagram-wide
     combinatorial factor when constructing an integrand numerator.
     """)
@@ -393,10 +397,13 @@ def _():
             _external_momentum,
             _external_momentum,
         )
-        _color_average = _metric(
-            _adjoint(8, _color_a),
-            _adjoint(8, _color_b),
-        ) / 8
+        _color_average = (
+            _metric(
+                _adjoint(8, _color_a),
+                _adjoint(8, _color_b),
+            )
+            / 8
+        )
         _transverse_average = (
             _metric(_minkowski(4, _mu), _minkowski(4, _nu))
             - _momentum(0, _minkowski(4, _mu))
@@ -466,16 +473,12 @@ def _(
     contract_qcd_numerator,
     mo,
     project_gluon_self_energy_scalar,
-    selected_diagram,
     selected_label,
+    selected_numerator,
     table,
 ):
-    contracted_numerator = contract_qcd_numerator(
-        selected_diagram.numerator_expression()
-    )
-    scalar_projection = project_gluon_self_energy_scalar(
-        contracted_numerator
-    )
+    contracted_numerator = contract_qcd_numerator(selected_numerator)
+    scalar_projection = project_gluon_self_energy_scalar(contracted_numerator)
 
     table(
         [
