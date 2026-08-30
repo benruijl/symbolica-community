@@ -35,7 +35,7 @@ python_stubgen = [
 
 [dependencies]
 example_extension = { path = "example_extension" }
-feynkit-py = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05" }
+feynkit-py = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60" }
 idenso = { version = "0.3", features = ["bincode", "python"] }
 symbolica = { version = "2.2", features = ["python_export"] }
 symbolica-integrate = { version = "1.0", features = ["steps"] }
@@ -44,7 +44,7 @@ pyo3-stub-gen = { version = "0.17", optional = true, default-features = false, f
     "numpy",
 ] }
 spynso3 = { version = "0.1" }
-vakint = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05", features = [
+vakint = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60", features = [
     "symbolica_community_module",
 ] }
 mimalloc = { version = "0.1", features = [
@@ -52,10 +52,10 @@ mimalloc = { version = "0.1", features = [
 ] } # prevent TLS allocation errors in conjunction with numpy
 
 [patch.crates-io]
-spynso3 = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05" }
-idenso = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05" }
-spenso = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05" }
-spenso-hep-lib = { git = "https://github.com/alphal00p/gammaloop", rev = "599cf1cef85c91c964b87ed34e44f16ad757ad05" }
+spynso3 = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60" }
+idenso = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60" }
+spenso = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60" }
+spenso-hep-lib = { git = "https://github.com/alphal00p/gammaloop", rev = "2cf9ab9e64e4ea06441fba9e4d6c4501be801f60" }
 
 symbolica = { git = "https://github.com/symbolica-dev/symbolica", rev = "0441bd7a511209dce2ca99925fe87f8b18e4bf03" }
 numerica = { git = "https://github.com/symbolica-dev/symbolica", rev = "0441bd7a511209dce2ca99925fe87f8b18e4bf03" }
